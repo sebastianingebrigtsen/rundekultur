@@ -1,0 +1,70 @@
+// src/components/JoinPage.js
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ref, get, set, onDisconnect } from 'firebase/database';
+import { database } from '../firebase';
+
+function JoinPage() {
+  const navigate = useNavigate();
+  const [pin, setPin] = useState('');
+  const [name, setName] = useState(() => localStorage.getItem('name') || '');
+
+  useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const pinParam = queryParams.get('pin');
+    if (pinParam) setPin(pinParam);
+  }, []);
+
+  const handleJoin = async () => {
+    if (!name || !pin) {
+      alert('Navn og PIN kreves');
+      return;
+    }
+
+    try {
+      const lobbyRef = ref(database, `lobbies/${pin}`);
+      const snapshot = await get(lobbyRef);
+      if (!snapshot.exists()) {
+        alert('Lobby ikke funnet');
+        return;
+      }
+      const data = snapshot.val();
+      const players = data.players ? Object.keys(data.players) : [];
+      if (players.length >= 12) {
+        alert('Lobbyen er full');
+        return;
+      }
+      await set(ref(database, `lobbies/${pin}/players/${name}`), { connected: true });
+      onDisconnect(ref(database, `lobbies/${pin}/players/${name}/connected`)).set(false);
+      localStorage.setItem('name', name);
+      navigate(`/lobby/${pin}`, { state: { name } });
+    } catch (error) {
+      alert('Noe gikk galt. Prøv igjen.');
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 400, margin: '2rem auto', textAlign: 'center' }}>
+      <h2>Bli med i lobby</h2>
+      <input
+        type="text"
+        placeholder="Navnet ditt"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        style={{ width: '100%', padding: '8px', marginBottom: '12px' }}
+      />
+      <input
+        type="text"
+        placeholder="PIN"
+        value={pin}
+        onChange={(e) => setPin(e.target.value)}
+        style={{ width: '100%', padding: '8px', marginBottom: '12px' }}
+      />
+      <button onClick={handleJoin} style={{ width: '100%', padding: '10px' }}>
+        Bli med
+      </button>
+    </div>
+  );
+}
+
+export default JoinPage;

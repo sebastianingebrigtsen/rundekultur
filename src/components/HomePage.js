@@ -1,7 +1,7 @@
 // src/components/HomePage.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ref, set, get } from 'firebase/database';
+import { ref, set, get, onDisconnect } from 'firebase/database';
 import { database } from '../firebase';
 
 function HomePage() {
@@ -40,10 +40,11 @@ function HomePage() {
     const fullLobby = {
       host: name,
       lobbyName: `Lobby ${pin}`,
-      players: { [name]: true },
+      players: { [name]: { connected: true } },
       wheelOptions: ['drink', 'cider', 'øl', 'vin', 'shot'],
     };
     set(ref(database, `lobbies/${pin}`), fullLobby);
+    onDisconnect(ref(database, `lobbies/${pin}/players/${name}/connected`)).set(false);
     localStorage.setItem('lastLobby', JSON.stringify({ pin, lobbyName: `Lobby ${pin}` }));
     setLastLobby({ pin, lobbyName: `Lobby ${pin}` });
     navigate(`/lobby/${pin}`, { state: { name } });
@@ -72,7 +73,8 @@ function HomePage() {
         alert('Lobbyen er full');
         return;
       }
-      set(ref(database, `lobbies/${pin}/players/${name}`), true);
+      set(ref(database, `lobbies/${pin}/players/${name}`), { connected: true });
+      onDisconnect(ref(database, `lobbies/${pin}/players/${name}/connected`)).set(false);
       const nameToSave = data.lobbyName || `Lobby ${pin}`;
       localStorage.setItem('lastLobby', JSON.stringify({ pin, lobbyName: nameToSave }));
       setLastLobby({ pin, lobbyName: nameToSave });
@@ -93,7 +95,8 @@ function HomePage() {
         setLastLobby(null);
         return;
       }
-      set(ref(database, `lobbies/${lastLobby.pin}/players/${name}`), true);
+      set(ref(database, `lobbies/${lastLobby.pin}/players/${name}`), { connected: true });
+      onDisconnect(ref(database, `lobbies/${lastLobby.pin}/players/${name}/connected`)).set(false);
       navigate(`/lobby/${lastLobby.pin}`, { state: { name } });
     } catch {
       alert('Klarte ikke koble til forrige lobby.');

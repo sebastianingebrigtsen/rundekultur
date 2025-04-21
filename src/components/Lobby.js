@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ref, onValue, set, onDisconnect, update } from 'firebase/database';
 import { database } from '../firebase';
+import { QRCodeCanvas } from 'qrcode.react';
 
 function Lobby() {
   const { pin } = useParams();
@@ -11,13 +12,13 @@ function Lobby() {
   const name = location.state?.name;
 
   const [host, setHost] = useState('');
-  const [players, setPlayers] = useState([]);
+  const [players, setPlayers] = useState({});
   const [wheelOptions, setWheelOptions] = useState([]);
   const [newOption, setNewOption] = useState('');
   const [stats, setStats] = useState({ losses: {}, topOdds: [] });
   const [view, setView] = useState('lobby');
+  const [showQR, setShowQR] = useState(false);
 
-  // Hent lobby-data og håndter host-fravær
   useEffect(() => {
     const lobbyRef = ref(database, `lobbies/${pin}`);
     const unsubscribe = onValue(lobbyRef, (snapshot) => {
@@ -26,9 +27,9 @@ function Lobby() {
         navigate('/');
         return;
       }
-      const currentPlayers = Object.keys(data.players || {});
-      setPlayers(currentPlayers);
+      setPlayers(data.players || {});
       setWheelOptions(data.wheelOptions || []);
+      const currentPlayers = Object.keys(data.players || {});
       if (data.host && !currentPlayers.includes(data.host)) {
         const newHost = currentPlayers[0] || '';
         if (newHost) update(ref(database, `lobbies/${pin}`), { host: newHost });
@@ -38,7 +39,6 @@ function Lobby() {
     return unsubscribe;
   }, [pin, navigate]);
 
-  // Lytt på stats for leaderboard
   useEffect(() => {
     const statsRef = ref(database, `lobbies/${pin}/stats`);
     const unsubscribe = onValue(statsRef, (snapshot) => {
@@ -48,15 +48,13 @@ function Lobby() {
     return unsubscribe;
   }, [pin]);
 
-  // Tilkoblingsstatus
   useEffect(() => {
     if (!name) return;
     const playerRef = ref(database, `lobbies/${pin}/players/${name}`);
-    set(playerRef, true);
-    onDisconnect(playerRef).remove();
+    set(playerRef, { connected: true });
+    onDisconnect(ref(database, `lobbies/${pin}/players/${name}/connected`)).set(false);
   }, [pin, name]);
 
-  // Naviger til spill ved opprettet game-node
   useEffect(() => {
     const gameRef = ref(database, `lobbies/${pin}/game`);
     const unsubscribe = onValue(gameRef, (snapshot) => {
@@ -65,13 +63,11 @@ function Lobby() {
     return unsubscribe;
   }, [pin, navigate, name]);
 
-  // Redirect om ingen navn
   useEffect(() => {
     if (!name) navigate('/');
   }, [name, navigate]);
 
   const isHost = name === host;
-
   const handleAddOption = () => {
     const trimmed = newOption.trim();
     if (!trimmed) return;
@@ -91,16 +87,16 @@ function Lobby() {
     navigate(`/game/${pin}`, { state: { name } });
   };
 
-  // Sortert tapeliste
   const lossEntries = Object.entries(stats.losses)
     .map(([player, count]) => ({ player, count }))
     .sort((a, b) => b.count - a.count);
 
-  // Topp 3 dårligst odds, prosent med 2 desimaler
   const topThree = stats.topOdds.slice(0, 3).map((entry) => ({
     player: entry.player,
     percent: (entry.odds * 100).toFixed(),
   }));
+
+  const lobbyUrl = `${window.location.origin}/join?pin=${pin}`;
 
   return (
     <div style={{ position: 'relative', maxWidth: 600, margin: '2rem auto', textAlign: 'center' }}>
@@ -122,10 +118,48 @@ function Lobby() {
           </h2>
           <p>Vert: {host}</p>
 
+          <div style={{ marginBottom: '1rem' }}>
+            <button onClick={() => setShowQR(!showQR)} style={{ marginRight: '8px' }}>
+              Vis QR‑kode
+            </button>
+            <button
+              onClick={() => {
+                try {
+                  navigator.clipboard.writeText(lobbyUrl);
+                  alert('Lenke kopiert!');
+                } catch (err) {
+                  // fallback for eldre nettlesere
+                  const textarea = document.createElement('textarea');
+                  textarea.value = lobbyUrl;
+                  document.body.appendChild(textarea);
+                  textarea.select();
+                  try {
+                    document.execCommand('copy');
+                    alert('Lenke kopiert!');
+                  } catch {
+                    alert('Klarte ikke kopiere lenken.');
+                  }
+                  document.body.removeChild(textarea);
+                }
+              }}
+            >
+              Kopier lenke
+            </button>
+          </div>
+
+          {showQR && (
+            <div style={{ margin: '1rem 0' }}>
+              <p>Scan QR‑kode for å bli med:</p>
+              <QRCodeCanvas value={lobbyUrl} size={128} includeMargin={true} />
+            </div>
+          )}
+
           <h3>Spillere:</h3>
           <ul>
-            {players.map((p) => (
-              <li key={p}>{p}</li>
+            {Object.entries(players).map(([playerName, info]) => (
+              <li key={playerName}>
+                {info.connected ? '🟢' : '🔴'} {playerName}
+              </li>
             ))}
           </ul>
 
