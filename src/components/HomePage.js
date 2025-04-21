@@ -6,15 +6,10 @@ import { database } from '../firebase';
 
 function HomePage() {
   const navigate = useNavigate();
-  // Brukerens navn
   const [name, setName] = useState(() => localStorage.getItem('name') || '');
   const [tempName, setTempName] = useState('');
-  // Join-felt
   const [pinInput, setPinInput] = useState('');
   const [showJoinField, setShowJoinField] = useState(false);
-  // Lobby-navn for når man oppretter egen lobby
-  const [lobbyName, setLobbyName] = useState('');
-  // Siste lobby fra localStorage
   const [lastLobby, setLastLobby] = useState(() => {
     const saved = localStorage.getItem('lastLobby');
     return saved ? JSON.parse(saved) : null;
@@ -44,13 +39,13 @@ function HomePage() {
     const pin = generatePin();
     const fullLobby = {
       host: name,
-      lobbyName: lobbyName || `Lobby ${pin}`,
+      lobbyName: `Lobby ${pin}`,
       players: { [name]: true },
       wheelOptions: ['drink', 'cider', 'øl', 'vin', 'shot'],
     };
     set(ref(database, `lobbies/${pin}`), fullLobby);
-    localStorage.setItem('lastLobby', JSON.stringify({ pin, lobbyName: fullLobby.lobbyName }));
-    setLastLobby({ pin, lobbyName: fullLobby.lobbyName });
+    localStorage.setItem('lastLobby', JSON.stringify({ pin, lobbyName: `Lobby ${pin}` }));
+    setLastLobby({ pin, lobbyName: `Lobby ${pin}` });
     navigate(`/lobby/${pin}`, { state: { name } });
   };
 
@@ -87,24 +82,30 @@ function HomePage() {
     }
   };
 
-  const handleJoinLast = () => {
+  const handleJoinLast = async () => {
     if (!lastLobby || !name) return;
-    set(ref(database, `lobbies/${lastLobby.pin}/players/${name}`), true);
-    navigate(`/lobby/${lastLobby.pin}`, { state: { name } });
+    try {
+      const lobbyRef = ref(database, `lobbies/${lastLobby.pin}`);
+      const snapshot = await get(lobbyRef);
+      if (!snapshot.exists()) {
+        alert('Forrige lobby finnes ikke lenger.');
+        localStorage.removeItem('lastLobby');
+        setLastLobby(null);
+        return;
+      }
+      set(ref(database, `lobbies/${lastLobby.pin}/players/${name}`), true);
+      navigate(`/lobby/${lastLobby.pin}`, { state: { name } });
+    } catch {
+      alert('Klarte ikke koble til forrige lobby.');
+    }
   };
 
   return (
     <div style={{ maxWidth: 400, margin: '2rem auto', textAlign: 'center' }}>
-      {/* Bli med siste lobby */}
-      {!name && lastLobby && (
-        <button onClick={handleJoinLast} style={{ width: '100%', padding: '10px', marginBottom: '16px' }}>
-          Bli med tidligere lobby "{lastLobby.lobbyName}"
-        </button>
-      )}
+      <h1>Velkommen til Rundekultur</h1>
 
       {!name ? (
         <>
-          <h1>Velkommen til Rundekultur</h1>
           <input
             type="text"
             placeholder="Skriv inn navnet ditt"
@@ -112,29 +113,28 @@ function HomePage() {
             onChange={(e) => setTempName(e.target.value)}
             style={{ width: '100%', padding: '8px', marginBottom: '12px' }}
           />
-          <button onClick={saveName} style={{ width: '100%', padding: '10px' }}>
+          <button onClick={saveName} style={{ width: '100%', padding: '10px', marginBottom: '8px' }}>
             Lagre navn
           </button>
+
+          {lastLobby && (
+            <button onClick={handleJoinLast} style={{ width: '100%', padding: '10px', marginBottom: '16px' }}>
+              Gjenoppta tidligere lobby: "{lastLobby.lobbyName}"
+            </button>
+          )}
         </>
       ) : (
         <>
-          <h1>Rundekultur</h1>
           <p>
             Hei, <strong>{name}</strong>!
           </p>
-          <input
-            type="text"
-            placeholder="Lobby navn (f.eks. torsdag kveld)"
-            value={lobbyName}
-            onChange={(e) => setLobbyName(e.target.value)}
-            style={{ width: '100%', padding: '8px', marginBottom: '12px' }}
-          />
+
           <button onClick={handleStart} style={{ width: '100%', padding: '10px', marginBottom: '8px' }}>
             Start et nytt spill
           </button>
 
           <button onClick={() => setShowJoinField(!showJoinField)} style={{ width: '100%', padding: '10px', marginBottom: '8px' }}>
-            Bli med i lobby
+            Bli med i spill
           </button>
 
           <button onClick={handleEditName} style={{ width: '100%', padding: '10px', marginBottom: '16px', background: '#ddd' }}>
@@ -145,7 +145,7 @@ function HomePage() {
             <div style={{ marginBottom: '16px' }}>
               <input
                 type="text"
-                placeholder="Skriv inn spill‑PIN"
+                placeholder="Skriv inn PIN"
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value)}
                 style={{ width: '70%', padding: '8px' }}
@@ -154,6 +154,12 @@ function HomePage() {
                 Bli med
               </button>
             </div>
+          )}
+
+          {lastLobby && (
+            <button onClick={handleJoinLast} style={{ width: '100%', padding: '10px', marginBottom: '16px', background: '#eee' }}>
+              Gjenoppta tidligere lobby: "{lastLobby.lobbyName}"
+            </button>
           )}
         </>
       )}
