@@ -5,6 +5,8 @@ import { ref, onValue, set, onDisconnect, update } from 'firebase/database';
 import { database } from '../firebase';
 import { QRCodeCanvas } from 'qrcode.react';
 
+const emojiList = ['😎', '😈', '👻', '🤠', '👽', '🐸', '😺', '🧙‍♂️', '🧛‍♀️', '🧞', '🤡', '🥸'];
+
 function Lobby() {
   const { pin } = useParams();
   const navigate = useNavigate();
@@ -18,6 +20,30 @@ function Lobby() {
   const [stats, setStats] = useState({ losses: {}, topOdds: [] });
   const [view, setView] = useState('lobby');
   const [showQR, setShowQR] = useState(false);
+  const [roundsPlayed, setRoundsPlayed] = useState(0);
+  const [isOffline, setIsOffline] = useState(false);
+  const [emojis, setEmojis] = useState({});
+
+  useEffect(() => {
+    const handleOffline = () => {
+      setIsOffline(true);
+      localStorage.setItem('wasDisconnected', 'true');
+    };
+    const handleOnline = () => setIsOffline(false);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (localStorage.getItem('wasDisconnected')) {
+      alert('Du mistet tilkoblingen, men er nå koblet til igjen.');
+      localStorage.removeItem('wasDisconnected');
+    }
+  }, []);
 
   useEffect(() => {
     const lobbyRef = ref(database, `lobbies/${pin}`);
@@ -30,6 +56,11 @@ function Lobby() {
       setPlayers(data.players || {});
       setWheelOptions(data.wheelOptions || []);
       const currentPlayers = Object.keys(data.players || {});
+      const emojiMap = {};
+      currentPlayers.forEach((player, i) => {
+        emojiMap[player] = emojiList[i % emojiList.length];
+      });
+      setEmojis(emojiMap);
       if (data.host && !currentPlayers.includes(data.host)) {
         const newHost = currentPlayers[0] || '';
         if (newHost) update(ref(database, `lobbies/${pin}`), { host: newHost });
@@ -46,6 +77,13 @@ function Lobby() {
       setStats({ losses: s.losses || {}, topOdds: s.topOdds || [] });
     });
     return unsubscribe;
+  }, [pin]);
+
+  useEffect(() => {
+    const roundsRef = ref(database, `lobbies/${pin}/stats/roundsPlayed`);
+    return onValue(roundsRef, (snapshot) => {
+      setRoundsPlayed(snapshot.val() || 0);
+    });
   }, [pin]);
 
   useEffect(() => {
@@ -99,24 +137,33 @@ function Lobby() {
   const lobbyUrl = `${window.location.origin}/join?pin=${pin}`;
 
   return (
-    <div style={{ position: 'relative', maxWidth: 600, margin: '2rem auto', textAlign: 'center' }}>
+    <div style={{ maxWidth: '100%', padding: '1rem', margin: '0 auto', textAlign: 'center' }}>
+      {isOffline && (
+        <div style={{ background: '#fee', color: '#a00', padding: '0.5rem', marginBottom: '1rem', border: '1px solid #a00' }}>
+          ⚠ Du er frakoblet – sjekk internettforbindelsen din.
+        </div>
+      )}
+
       <button onClick={() => navigate('/')} style={{ position: 'absolute', top: '1rem', left: '1rem', padding: '6px 12px', fontSize: '0.9rem' }}>
         Tilbake
       </button>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <button onClick={() => setView('lobby')} style={{ marginRight: '8px' }}>
+      <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+        <button onClick={() => setView('lobby')} style={{ padding: '0.5rem 1rem' }}>
           Lobby
         </button>
-        <button onClick={() => setView('leaderboard')}>Leaderboard</button>
+        <button onClick={() => setView('leaderboard')} style={{ padding: '0.5rem 1rem' }}>
+          Leaderboard
+        </button>
       </div>
 
       {view === 'lobby' ? (
         <>
-          <h2>
+          <h2 style={{ fontSize: '1.4rem' }}>
             Lobby‑PIN: <strong>{pin}</strong>
           </h2>
           <p>Vert: {host}</p>
+          <p>Runder spilt: {roundsPlayed}</p>
 
           <div style={{ marginBottom: '1rem' }}>
             <button onClick={() => setShowQR(!showQR)} style={{ marginRight: '8px' }}>
@@ -128,7 +175,6 @@ function Lobby() {
                   navigator.clipboard.writeText(lobbyUrl);
                   alert('Lenke kopiert!');
                 } catch (err) {
-                  // fallback for eldre nettlesere
                   const textarea = document.createElement('textarea');
                   textarea.value = lobbyUrl;
                   document.body.appendChild(textarea);
@@ -155,16 +201,32 @@ function Lobby() {
           )}
 
           <h3>Spillere:</h3>
-          <ul>
+          <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1rem' }}>
             {Object.entries(players).map(([playerName, info]) => (
-              <li key={playerName}>
-                {info.connected ? '🟢' : '🔴'} {playerName}
+              <li key={playerName} style={{ marginBottom: '0.5rem' }}>
+                {info.connected ? '🟢' : '🔴'} {emojis[playerName]} {playerName}
+                {isHost && playerName !== name && (
+                  <button
+                    onClick={() => set(ref(database, `lobbies/${pin}/players/${playerName}`), null)}
+                    style={{
+                      marginLeft: '8px',
+                      padding: '4px 8px',
+                      fontSize: '0.8rem',
+                      background: '#f88',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Fjern
+                  </button>
+                )}
               </li>
             ))}
           </ul>
 
           <h3>Spinner‑hjul:</h3>
-          <ul>
+          <ul style={{ listStyle: 'none', padding: 0 }}>
             {wheelOptions.map((opt, idx) => (
               <li key={idx} style={{ marginBottom: '4px' }}>
                 {opt}
@@ -206,7 +268,7 @@ function Lobby() {
           <ol>
             {lossEntries.map((e, i) => (
               <li key={i}>
-                {e.player}: {e.count} tap
+                {emojis[e.player]} {e.player}: {e.count} tap
               </li>
             ))}
           </ol>
@@ -215,7 +277,7 @@ function Lobby() {
           <ol>
             {topThree.map((e, i) => (
               <li key={i}>
-                {e.player}: {e.percent}%
+                {emojis[e.player]} {e.player}: {e.percent}%
               </li>
             ))}
           </ol>

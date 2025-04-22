@@ -1,8 +1,10 @@
 // src/components/GamePage.js
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ref, onValue, update, remove, runTransaction } from 'firebase/database';
+import { ref, onValue, update, remove, runTransaction, get } from 'firebase/database';
 import { database } from '../firebase';
+
+const emojiList = ['😎', '😈', '👻', '🤠', '👽', '🐸', '😺', '🧙‍♂️', '🧛‍♀️', '🧞', '🤡', '🥸'];
 
 function GamePage() {
   const { pin } = useParams();
@@ -13,15 +15,44 @@ function GamePage() {
   const [players, setPlayers] = useState([]);
   const [wheelOptions, setWheelOptions] = useState([]);
   const [gameState, setGameState] = useState(null);
+  const [isOffline, setIsOffline] = useState(false);
+  const [emojis, setEmojis] = useState({});
 
-  // Hent lobby + spill-state fra Firebase
+  useEffect(() => {
+    const handleOffline = () => {
+      setIsOffline(true);
+      localStorage.setItem('wasDisconnected', 'true');
+    };
+    const handleOnline = () => setIsOffline(false);
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (localStorage.getItem('wasDisconnected')) {
+      alert('Du mistet tilkoblingen, men er nå koblet til igjen.');
+      localStorage.removeItem('wasDisconnected');
+    }
+  }, []);
+
   useEffect(() => {
     const lobbyRef = ref(database, `lobbies/${pin}`);
     const unsubLobby = onValue(lobbyRef, (snap) => {
       const data = snap.val();
       if (!data) return navigate('/');
-      setPlayers(Object.keys(data.players || {}));
+      const playerList = Object.keys(data.players || {});
+      setPlayers(playerList);
       setWheelOptions(data.wheelOptions || []);
+
+      const stored = {};
+      playerList.forEach((player, i) => {
+        stored[player] = emojiList[i % emojiList.length];
+      });
+      setEmojis(stored);
     });
 
     const gameRef = ref(database, `lobbies/${pin}/game`);
@@ -36,7 +67,6 @@ function GamePage() {
     };
   }, [pin, navigate]);
 
-  // Redirect ved refresh uten navn
   useEffect(() => {
     if (!name) navigate('/');
   }, [name, navigate]);
@@ -48,7 +78,6 @@ function GamePage() {
   const { currentMax, currentPlayerIdx, isOver, loser, spinResult, history = [] } = gameState;
   const currentPlayer = players[currentPlayerIdx];
 
-  // Kast terning
   const handleRoll = () => {
     const prevMax = currentMax;
     const roll = Math.floor(Math.random() * prevMax) + 1;
@@ -58,15 +87,20 @@ function GamePage() {
     if (roll === 1) {
       updates.isOver = true;
       updates.loser = name;
-      // Oppdater tapsteller
       runTransaction(ref(database, `lobbies/${pin}/stats/losses/${name}`), (count) => (count || 0) + 1);
-      // Oppdater topOdds (hold top 3)
+
       const newOdds = 1 / prevMax;
       runTransaction(ref(database, `lobbies/${pin}/stats/topOdds`), (current) => {
         const entry = { player: name, max: prevMax, odds: newOdds };
         const arr = Array.isArray(current) ? [...current, entry] : [entry];
         arr.sort((a, b) => a.odds - b.odds);
         return arr.slice(0, 3);
+      });
+
+      const statsRef = ref(database, `lobbies/${pin}/stats/roundsPlayed`);
+      get(statsRef).then((snap) => {
+        const prev = snap.val() || 0;
+        update(ref(database, `lobbies/${pin}/stats`), { roundsPlayed: prev + 1 });
       });
     } else {
       updates.currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
@@ -75,20 +109,17 @@ function GamePage() {
     update(ref(database, `lobbies/${pin}/game`), updates);
   };
 
-  // Spin hjulet
   const handleSpin = () => {
     if (!wheelOptions.length) return;
     const choice = wheelOptions[Math.floor(Math.random() * wheelOptions.length)];
     update(ref(database, `lobbies/${pin}/game`), { spinResult: choice });
   };
 
-  // Spill igjen: fjern game-node for alle og naviger tilbake
   const handlePlayAgain = () => {
     remove(ref(database, `lobbies/${pin}/game`));
     navigate(`/lobby/${pin}`, { state: { name } });
   };
 
-  // Finn siste tap entry for odds
   let lastLossOdds = null;
   if (isOver && history.length) {
     const lastEntry = history[history.length - 1];
@@ -98,10 +129,34 @@ function GamePage() {
   }
 
   return (
-    <div style={{ maxWidth: 600, margin: '2rem auto', textAlign: 'center' }}>
+    <div style={{ maxWidth: 600, margin: '2rem auto', textAlign: 'center', padding: '1rem' }}>
+      {isOffline && (
+        <div style={{ background: '#fee', color: '#a00', padding: '0.5rem', marginBottom: '1rem', border: '1px solid #a00' }}>
+          ⚠ Du er frakoblet – sjekk internettforbindelsen din.
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        {players.map((p, i) => (
+          <div
+            key={p}
+            style={{
+              padding: '0.5rem',
+              border: currentPlayer === p ? '2px solid limegreen' : '1px solid #ccc',
+              borderRadius: '8px',
+              background: currentPlayer === p ? '#e0ffe0' : '#f9f9f9',
+              minWidth: '60px',
+            }}
+          >
+            <div style={{ fontSize: '1.8rem' }}>{emojis[p]}</div>
+            <div style={{ fontSize: '0.8rem' }}>{p}</div>
+          </div>
+        ))}
+      </div>
+
       {!isOver ? (
         <>
-          <h2>Death‑roll</h2>
+          <h2 style={{ fontSize: '1.6rem' }}>Death‑roll</h2>
           <p>
             Tur: <strong>{currentPlayer}</strong>
           </p>
@@ -115,7 +170,6 @@ function GamePage() {
             <p>Venter på at {currentPlayer} kaster…</p>
           )}
 
-          {/* Historikk */}
           <div style={{ marginTop: '1.5rem', textAlign: 'left' }}>
             <h3>Tur‑historikk:</h3>
             <ul>
@@ -135,7 +189,7 @@ function GamePage() {
           </p>
           {lastLossOdds !== null && (
             <p>
-              Odds for å tape: 1/{history[history.length - 1].max} = {lastLossOdds.toFixed(6)}%
+              Odds for å tape: 1/{history[history.length - 1].max} = {lastLossOdds.toFixed(2)}%
             </p>
           )}
 

@@ -104,8 +104,8 @@ function HomePage() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '2rem auto', textAlign: 'center' }}>
-      <h1>Velkommen til Rundekultur</h1>
+    <div style={{ maxWidth: 400, margin: '2rem auto', textAlign: 'center', padding: '1rem' }}>
+      <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>🎲 Rundekultur</h1>
 
       {!name ? (
         <>
@@ -114,53 +114,63 @@ function HomePage() {
             placeholder="Skriv inn navnet ditt"
             value={tempName}
             onChange={(e) => setTempName(e.target.value)}
-            style={{ width: '100%', padding: '8px', marginBottom: '12px' }}
+            style={{ width: '100%', padding: '10px', marginBottom: '12px', fontSize: '1rem' }}
           />
-          <button onClick={saveName} style={{ width: '100%', padding: '10px', marginBottom: '8px' }}>
+          <button onClick={saveName} style={{ width: '100%', padding: '12px', marginBottom: '16px', fontSize: '1rem' }}>
             Lagre navn
           </button>
 
           {lastLobby && (
-            <button onClick={handleJoinLast} style={{ width: '100%', padding: '10px', marginBottom: '16px' }}>
+            <button
+              onClick={handleJoinLast}
+              style={{ width: '100%', padding: '12px', marginBottom: '16px', background: '#eee', fontSize: '0.95rem' }}
+            >
               Gjenoppta tidligere lobby: "{lastLobby.lobbyName}"
             </button>
           )}
         </>
       ) : (
         <>
-          <p>
+          <p style={{ fontSize: '1.1rem' }}>
             Hei, <strong>{name}</strong>!
           </p>
 
-          <button onClick={handleStart} style={{ width: '100%', padding: '10px', marginBottom: '8px' }}>
+          <button onClick={handleStart} style={{ width: '100%', padding: '12px', marginBottom: '10px', fontSize: '1.1rem' }}>
             Start et nytt spill
           </button>
 
-          <button onClick={() => setShowJoinField(!showJoinField)} style={{ width: '100%', padding: '10px', marginBottom: '8px' }}>
-            Bli med i spill
-          </button>
+          {!showJoinField && (
+            <button onClick={() => setShowJoinField(true)} style={{ width: '100%', padding: '12px', marginBottom: '10px', fontSize: '1.1rem' }}>
+              Bli med i spill
+            </button>
+          )}
 
-          <button onClick={handleEditName} style={{ width: '100%', padding: '10px', marginBottom: '16px', background: '#ddd' }}>
+          {showJoinField && (
+            <>
+              <div style={{ marginBottom: '12px' }}>
+                <input
+                  type="text"
+                  placeholder="Skriv inn PIN"
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value)}
+                  style={{ width: '70%', padding: '10px', fontSize: '1rem' }}
+                />
+                <button onClick={handleJoin} style={{ width: '28%', padding: '10px', marginLeft: '2%', fontSize: '1rem' }}>
+                  Bli med
+                </button>
+              </div>
+              <button onClick={() => setShowJoinField(false)} style={{ width: '100%', padding: '10px', background: '#ddd' }}>
+                Tilbake
+              </button>
+            </>
+          )}
+
+          <button onClick={handleEditName} style={{ width: '100%', padding: '10px', marginTop: '16px', background: '#eee', fontSize: '0.95rem' }}>
             Endre navn
           </button>
 
-          {showJoinField && (
-            <div style={{ marginBottom: '16px' }}>
-              <input
-                type="text"
-                placeholder="Skriv inn PIN"
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value)}
-                style={{ width: '70%', padding: '8px' }}
-              />
-              <button onClick={handleJoin} style={{ width: '28%', padding: '10px', marginLeft: '2%' }}>
-                Bli med
-              </button>
-            </div>
-          )}
-
           {lastLobby && (
-            <button onClick={handleJoinLast} style={{ width: '100%', padding: '10px', marginBottom: '16px', background: '#eee' }}>
+            <button onClick={handleJoinLast} style={{ width: '100%', padding: '12px', marginTop: '16px', background: '#eee', fontSize: '0.95rem' }}>
               Gjenoppta tidligere lobby: "{lastLobby.lobbyName}"
             </button>
           )}
