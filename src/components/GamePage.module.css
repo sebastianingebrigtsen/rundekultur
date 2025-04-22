@@ -1,0 +1,169 @@
+/* src/components/GamePage.module.css */
+
+.gameWrapper {
+  max-width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: #fff7db;
+  padding: 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  position: relative;
+}
+
+.warning {
+  background: #fee;
+  color: #a00;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #a00;
+  border-radius: 6px;
+}
+
+.playerBar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.playerCard {
+  background: #f4f4f4;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  min-width: 60px;
+}
+
+.activePlayer {
+  background: #e0ffe0;
+  border: 2px solid limegreen;
+}
+
+.playerEmoji {
+  font-size: 1.8rem;
+}
+
+.playerName {
+  font-size: 0.8rem;
+}
+
+.header {
+  font-size: 1.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.subtext {
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.rollButton,
+.spinButton,
+.playAgainButton {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  background-color: #ffde59;
+  color: #333;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.rollButton:hover,
+.spinButton:hover,
+.playAgainButton:hover {
+  transform: scale(1.05);
+}
+
+.diceAnimation {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-top: 1rem;
+  transition: color 0.3s ease;
+}
+
+.diceGreen {
+  color: #2e7d32;
+}
+
+.diceOrange {
+  color: #f9a825;
+}
+
+.diceRed {
+  color: #d32f2f;
+}
+
+.diceDarkRed {
+  color: #8b0000;
+}
+
+.historyBox {
+  margin-top: 1.5rem;
+  text-align: left;
+  width: 100%;
+  max-width: 500px;
+}
+
+.historyItem {
+  margin-bottom: 6px;
+  background: #f9f9f9;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.spinnerWheel {
+  margin-top: 2rem;
+  overflow: hidden;
+  width: 100%;
+  max-width: 300px;
+  height: 60px;
+  position: relative;
+  border: 2px solid #ccc;
+  background: #fff;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.wheelStrip {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  transition: left 3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.wheelItem {
+  width: 80px; /* ← Bytt ut min-width med fast width */
+  flex-shrink: 0; /* ← Legg til dette for å unngå at de krymper */
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f9f9f9;
+  border-right: 1px solid #ccc;
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.wheelPointer {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 25px solid red;
+  z-index: 2;
+}

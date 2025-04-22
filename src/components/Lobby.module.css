@@ -1,0 +1,291 @@
+/* src/components/Lobby.module.css */
+
+.wrapper {
+  max-width: 100%;
+  padding: 1rem;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  padding-top: 3rem;
+}
+
+.warning {
+  background: #fee;
+  color: #a00;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #a00;
+  border-radius: 6px;
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 2;
+  padding-top: 0;
+}
+
+.backButton {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background-color: #ddd;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.tabSwitcher {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tabButton {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.tabButton:hover {
+  background-color: #e0e0e0;
+}
+
+.dropdown {
+  position: relative;
+  margin-left: auto;
+}
+
+.dropdownBtn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #ddd;
+  cursor: pointer;
+}
+
+.dropdownContent {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-top: 4px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+  font-size: 1.4rem;
+  margin-bottom: 0.3rem;
+}
+
+.subtleInfo {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.playerGrid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.playerCard {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0.5rem;
+  width: 70px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.playerCardEmoji {
+  font-size: 1.6rem;
+}
+
+.playerCardName {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.connected {
+  background-color: #d4f5d4;
+  color: #256029;
+}
+
+.disconnected {
+  background-color: #f8d7da;
+  color: #842029;
+}
+
+.removeOptionButton {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  background-color: #ffc0c0;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.removeOptionButton:hover {
+  background-color: #ff9999;
+}
+
+.detailsBox {
+  text-align: left;
+  margin: 0 auto 1rem;
+  max-width: 500px;
+  background-color: #f9f9f9;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.addWheelContainer {
+  margin-top: 1rem;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.addWheelInput {
+  padding: 6px;
+  width: 60%;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.addWheelButton {
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.startButton {
+  margin-top: 2rem;
+  padding: 10px 20px;
+  font-size: 1rem;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.stats {
+  text-align: center;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.stats ol {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0;
+  list-style: none;
+}
+
+.stats li {
+  background: #f0f0f0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  flex: 1 1 30%;
+  min-width: 90px;
+  max-width: 120px;
+  font-weight: bold;
+  position: relative;
+}
+
+.stats li:nth-child(1)::before {
+  content: '🥇';
+  position: absolute;
+  top: -1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+}
+
+.stats li:nth-child(2)::before {
+  content: '🥈';
+  position: absolute;
+  top: -1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+}
+
+.stats li:nth-child(3)::before {
+  content: '🥉';
+  position: absolute;
+  top: -1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+}
+
+@media (max-width: 500px) {
+  .tabButton,
+  .dropdownBtn,
+  .addWheelButton,
+  .startButton {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+  }
+
+  .addWheelInput {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .topBar {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .dropdown {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+
+  .playerCard {
+    width: 70px;
+  }
+
+  .detailsBox {
+    font-size: 0.9rem;
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, set, get, onDisconnect } from 'firebase/database';
 import { database } from '../firebase';
@@ -14,6 +14,17 @@ function HomePage() {
     const saved = localStorage.getItem('lastLobby');
     return saved ? JSON.parse(saved) : null;
   });
+
+  // 🧠 Løsning for iPhone-zoom: scroll til toppen når tastatur forsvinner
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.visualViewport && window.visualViewport.scale === 1) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    window.visualViewport?.addEventListener('resize', handleResize);
+    return () => window.visualViewport?.removeEventListener('resize', handleResize);
+  }, []);
 
   const saveName = () => {
     const trimmed = tempName.trim();

@@ -1,5 +1,3 @@
-/* src/index.css */
-/* Globale stiler til appen */
 html,
 body,
 #root {
@@ -7,6 +5,7 @@ body,
   padding: 0;
   height: 100vh;
   overflow: hidden;
-  touch-action: manipulation; /* Gir bedre touch-feedback */
+  position: relative;
   font-family: system-ui, sans-serif;
+  background-color: #fff8dc; /* lett gul */
 }

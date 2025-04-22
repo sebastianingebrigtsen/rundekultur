@@ -1,0 +1,43 @@
+.emoji {
+  position: fixed;
+  font-size: 48px;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.emoji1 {
+  top: 10%;
+  left: 10%;
+  transform: rotate(-15deg);
+}
+.emoji2 {
+  top: 30%;
+  right: 12%;
+  transform: rotate(20deg);
+}
+.emoji3 {
+  top: 50%;
+  left: 5%;
+  transform: rotate(-30deg);
+}
+.emoji4 {
+  bottom: 20%;
+  right: 20%;
+  transform: rotate(5deg);
+}
+.emoji5 {
+  bottom: 10%;
+  left: 15%;
+  transform: rotate(10deg);
+}
+.emoji6 {
+  top: 5%;
+  right: 40%;
+  transform: rotate(-8deg);
+}
+.emoji7 {
+  bottom: 15%;
+  left: 50%;
+  transform: rotate(12deg);
+}

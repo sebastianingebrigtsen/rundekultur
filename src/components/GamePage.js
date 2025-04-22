@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ref, onValue, update, remove, runTransaction, get } from 'firebase/database';
 import { database } from '../firebase';
+import styles from './GamePage.module.css';
+import Spinner from './Spinner';
 
 const emojiList = ['😎', '😈', '👻', '🤠', '👽', '🐸', '😺', '🧙‍♂️', '🧛‍♀️', '🧞', '🤡', '🥸'];
 
@@ -17,6 +19,34 @@ function GamePage() {
   const [gameState, setGameState] = useState(null);
   const [isOffline, setIsOffline] = useState(false);
   const [emojis, setEmojis] = useState({});
+  const [isRolling, setIsRolling] = useState(false);
+  const [displayedRoll, setDisplayedRoll] = useState(null);
+  const [rollColorClass, setRollColorClass] = useState(styles.diceGreen);
+  const [showResultText, setShowResultText] = useState(false);
+
+  const animateRoll = (start, end) => {
+    const steps = 20;
+    const interval = 30;
+    const diff = start - end;
+    let i = 0;
+    const intervalId = setInterval(() => {
+      const ratio = i / steps;
+      const current = Math.floor(start - diff * ratio);
+      setDisplayedRoll(current);
+      i++;
+      if (i > steps) clearInterval(intervalId);
+    }, interval);
+  };
+
+  useEffect(() => {
+    if (displayedRoll && gameState?.currentMax) {
+      const ratio = displayedRoll / gameState.currentMax;
+      if (ratio > 0.7) setRollColorClass(styles.diceGreen);
+      else if (ratio > 0.4) setRollColorClass(styles.diceOrange);
+      else if (ratio > 0.2) setRollColorClass(styles.diceRed);
+      else setRollColorClass(styles.diceDarkRed);
+    }
+  }, [displayedRoll, gameState?.currentMax]);
 
   useEffect(() => {
     const handleOffline = () => {
@@ -40,14 +70,12 @@ function GamePage() {
   }, []);
 
   useEffect(() => {
-    const lobbyRef = ref(database, `lobbies/${pin}`);
-    const unsubLobby = onValue(lobbyRef, (snap) => {
+    const unsubLobby = onValue(ref(database, `lobbies/${pin}`), (snap) => {
       const data = snap.val();
       if (!data) return navigate('/');
       const playerList = Object.keys(data.players || {});
       setPlayers(playerList);
       setWheelOptions(data.wheelOptions || []);
-
       const stored = {};
       playerList.forEach((player, i) => {
         stored[player] = emojiList[i % emojiList.length];
@@ -55,10 +83,18 @@ function GamePage() {
       setEmojis(stored);
     });
 
-    const gameRef = ref(database, `lobbies/${pin}/game`);
-    const unsubGame = onValue(gameRef, (snap) => {
+    const unsubGame = onValue(ref(database, `lobbies/${pin}/game`), (snap) => {
       const g = snap.val();
-      if (g) setGameState(g);
+      if (g) {
+        setGameState(g);
+        if (g.history?.length) {
+          const last = g.history[g.history.length - 1];
+          if (last?.roll && last?.max) animateRoll(last.max, last.roll);
+        }
+        if (g.isOver && g.spinResult) {
+          setTimeout(() => setShowResultText(true), 3000);
+        }
+      }
     });
 
     return () => {
@@ -71,17 +107,13 @@ function GamePage() {
     if (!name) navigate('/');
   }, [name, navigate]);
 
-  if (!gameState || players.length === 0) {
-    return <p>Laster spill…</p>;
-  }
-
-  const { currentMax, currentPlayerIdx, isOver, loser, spinResult, history = [] } = gameState;
-  const currentPlayer = players[currentPlayerIdx];
-
   const handleRoll = () => {
-    const prevMax = currentMax;
+    setIsRolling(true);
+    const prevMax = gameState.currentMax;
     const roll = Math.floor(Math.random() * prevMax) + 1;
-    const newHistory = [...history, { player: name, roll, max: prevMax }];
+    const newHistory = Array.isArray(gameState.history) ? [...gameState.history] : [];
+    newHistory.push({ player: name, roll, max: prevMax });
+
     const updates = { currentMax: roll, history: newHistory };
 
     if (roll === 1) {
@@ -97,20 +129,21 @@ function GamePage() {
         return arr.slice(0, 3);
       });
 
-      const statsRef = ref(database, `lobbies/${pin}/stats/roundsPlayed`);
-      get(statsRef).then((snap) => {
+      get(ref(database, `lobbies/${pin}/stats/roundsPlayed`)).then((snap) => {
         const prev = snap.val() || 0;
         update(ref(database, `lobbies/${pin}/stats`), { roundsPlayed: prev + 1 });
       });
     } else {
-      updates.currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
+      updates.currentPlayerIdx = (gameState.currentPlayerIdx + 1) % players.length;
     }
 
     update(ref(database, `lobbies/${pin}/game`), updates);
+    setIsRolling(false);
   };
 
   const handleSpin = () => {
     if (!wheelOptions.length) return;
+    setShowResultText(false);
     const choice = wheelOptions[Math.floor(Math.random() * wheelOptions.length)];
     update(ref(database, `lobbies/${pin}/game`), { spinResult: choice });
   };
@@ -120,62 +153,52 @@ function GamePage() {
     navigate(`/lobby/${pin}`, { state: { name } });
   };
 
-  let lastLossOdds = null;
-  if (isOver && history.length) {
-    const lastEntry = history[history.length - 1];
-    if (lastEntry.player === loser) {
-      lastLossOdds = (1 / lastEntry.max) * 100;
-    }
-  }
+  if (!gameState || players.length === 0) return <p>Laster spill…</p>;
+
+  const { currentMax, currentPlayerIdx, isOver, loser, spinResult, history = [] } = gameState;
+  const currentPlayer = players[currentPlayerIdx];
+
+  const lastEntry = history[history.length - 1];
+  const lossOdds = lastEntry?.roll === 1 ? `1/${lastEntry.max} = ${((1 / lastEntry.max) * 100).toFixed(0)}%` : null;
 
   return (
-    <div style={{ maxWidth: 600, margin: '2rem auto', textAlign: 'center', padding: '1rem' }}>
-      {isOffline && (
-        <div style={{ background: '#fee', color: '#a00', padding: '0.5rem', marginBottom: '1rem', border: '1px solid #a00' }}>
-          ⚠ Du er frakoblet – sjekk internettforbindelsen din.
-        </div>
-      )}
+    <div className={styles.gameWrapper}>
+      <div style={{ position: 'absolute', top: '8px', left: '12px', fontWeight: 'bold', fontSize: '1rem' }}>PIN: {pin}</div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        {players.map((p, i) => (
-          <div
-            key={p}
-            style={{
-              padding: '0.5rem',
-              border: currentPlayer === p ? '2px solid limegreen' : '1px solid #ccc',
-              borderRadius: '8px',
-              background: currentPlayer === p ? '#e0ffe0' : '#f9f9f9',
-              minWidth: '60px',
-            }}
-          >
-            <div style={{ fontSize: '1.8rem' }}>{emojis[p]}</div>
-            <div style={{ fontSize: '0.8rem' }}>{p}</div>
+      {isOffline && <div className={styles.warning}>⚠ Du er frakoblet – sjekk internettforbindelsen din.</div>}
+
+      <div className={styles.playerBar}>
+        {players.map((p) => (
+          <div key={p} className={`${styles.playerCard} ${currentPlayer === p ? styles.activePlayer : ''}`}>
+            <div className={styles.playerEmoji}>{emojis[p]}</div>
+            <div className={styles.playerName}>{p}</div>
           </div>
         ))}
       </div>
 
       {!isOver ? (
         <>
-          <h2 style={{ fontSize: '1.6rem' }}>Death‑roll</h2>
-          <p>
+          <h2 className={styles.header}>🎲 Death-roll</h2>
+          <p className={styles.subtext}>
             Tur: <strong>{currentPlayer}</strong>
           </p>
-          <p>Mulige tall: 1–{currentMax}</p>
 
           {name === currentPlayer ? (
-            <button onClick={handleRoll} style={{ padding: '10px 20px', fontSize: '1rem' }}>
-              Kast terning
+            <button onClick={handleRoll} className={styles.rollButton} disabled={isRolling}>
+              {isRolling ? 'Ruller…' : 'Kast'}
             </button>
           ) : (
             <p>Venter på at {currentPlayer} kaster…</p>
           )}
 
-          <div style={{ marginTop: '1.5rem', textAlign: 'left' }}>
+          {displayedRoll && <div className={`${styles.diceAnimation} ${rollColorClass}`}>{displayedRoll}</div>}
+
+          <div className={styles.historyBox}>
             <h3>Tur‑historikk:</h3>
             <ul>
-              {history.map((entry, idx) => (
-                <li key={idx}>
-                  <strong>{entry.player}</strong>: rullet {entry.roll} av 1–{entry.max}
+              {[...history].reverse().map((entry, idx) => (
+                <li key={idx} className={styles.historyItem}>
+                  <span>{emojis[entry.player]}</span> <strong>{entry.player}</strong> rullet <strong>{entry.roll}</strong>
                 </li>
               ))}
             </ul>
@@ -183,35 +206,35 @@ function GamePage() {
         </>
       ) : (
         <>
-          <h2>🎉 Spill over!</h2>
+          <h2 className={styles.header}>🎉 Spill over!</h2>
           <p>
-            <strong>{loser}</strong> rullet 1 og tapte!
+            <strong>{loser}</strong> rullet 1 og tapte {lossOdds ? `med ${lossOdds} odds` : ''}!
           </p>
-          {lastLossOdds !== null && (
-            <p>
-              Odds for å tape: 1/{history[history.length - 1].max} = {lastLossOdds.toFixed(2)}%
-            </p>
+
+          <Spinner options={wheelOptions} result={spinResult} />
+
+          {!spinResult && name === loser && (
+            <button onClick={handleSpin} className={styles.spinButton}>
+              Spin hjulet
+            </button>
           )}
 
-          {!spinResult ? (
-            name === loser ? (
-              <button onClick={handleSpin} style={{ padding: '10px 20px', fontSize: '1rem' }}>
-                Spin hjulet
-              </button>
-            ) : (
-              <p>Venter på at taperen spinner hjulet…</p>
+          {spinResult ? (
+            showResultText && (
+              <p>
+                <strong>{loser}</strong> skal kjøpe en <strong>{spinResult}</strong> til alle sammen! Skål for {loser}!
+              </p>
             )
           ) : (
-            <>
-              <p>
-                Spinner‑resultat: <strong>{spinResult}</strong>
-              </p>
-              <div style={{ marginTop: '2rem' }}>
-                <button onClick={handlePlayAgain} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
-                  Spill igjen
-                </button>
-              </div>
-            </>
+            <p>Venter på at {loser} skal spinne…</p>
+          )}
+
+          {spinResult && showResultText && (
+            <div>
+              <button onClick={handlePlayAgain} className={styles.playAgainButton}>
+                Spill igjen
+              </button>
+            </div>
           )}
         </>
       )}
