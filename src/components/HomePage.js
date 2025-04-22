@@ -143,13 +143,12 @@ function HomePage() {
       </div>
 
       <div className={styles.container}>
-        <h1 className={styles.title}>🎲 Rundekultur</h1>
+        <img src="/images/rundekultur-logo.png" alt="Rundekultur logo" className={styles.logo} />{' '}
         {name && (
           <p className={styles.greeting}>
             Hei, <strong>{name}</strong>!
           </p>
         )}
-
         {!name ? (
           <>
             <input
@@ -189,7 +188,6 @@ function HomePage() {
             )}
           </>
         )}
-
         <div className={styles.footer}>
           {name && (
             <button onClick={handleEditName} className={styles.footerButton}>

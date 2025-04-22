@@ -21,7 +21,6 @@ function GamePage() {
   const [emojis, setEmojis] = useState({});
   const [isRolling, setIsRolling] = useState(false);
   const [displayedRoll, setDisplayedRoll] = useState(null);
-  const [rollColorClass, setRollColorClass] = useState(styles.diceGreen);
   const [showResultText, setShowResultText] = useState(false);
 
   const animateRoll = (start, end) => {
@@ -38,15 +37,13 @@ function GamePage() {
     }, interval);
   };
 
-  useEffect(() => {
-    if (displayedRoll && gameState?.currentMax) {
-      const ratio = displayedRoll / gameState.currentMax;
-      if (ratio > 0.7) setRollColorClass(styles.diceGreen);
-      else if (ratio > 0.4) setRollColorClass(styles.diceOrange);
-      else if (ratio > 0.2) setRollColorClass(styles.diceRed);
-      else setRollColorClass(styles.diceDarkRed);
-    }
-  }, [displayedRoll, gameState?.currentMax]);
+  const getRollColorClass = (roll, max) => {
+    const ratio = roll / max;
+    if (ratio > 0.7) return styles.diceGreen;
+    if (ratio > 0.4) return styles.diceOrange;
+    if (ratio > 0.2) return styles.diceRed;
+    return styles.diceDarkRed;
+  };
 
   useEffect(() => {
     const handleOffline = () => {
@@ -158,57 +155,49 @@ function GamePage() {
   const { currentMax, currentPlayerIdx, isOver, loser, spinResult, history = [] } = gameState;
   const currentPlayer = players[currentPlayerIdx];
 
-  const lastEntry = history[history.length - 1];
-  const lossOdds = lastEntry?.roll === 1 ? `1/${lastEntry.max} = ${((1 / lastEntry.max) * 100).toFixed(0)}%` : null;
+  const lastEntry = history.length ? history[history.length - 1] : null;
+  const odds = lastEntry && lastEntry.player === loser ? (1 / lastEntry.max) * 100 : null;
+
+  const recentHistory = history.slice(-4).reverse();
 
   return (
     <div className={styles.gameWrapper}>
-      <div style={{ position: 'absolute', top: '8px', left: '12px', fontWeight: 'bold', fontSize: '1rem' }}>PIN: {pin}</div>
-
       {isOffline && <div className={styles.warning}>⚠ Du er frakoblet – sjekk internettforbindelsen din.</div>}
 
-      <div className={styles.playerBar}>
-        {players.map((p) => (
-          <div key={p} className={`${styles.playerCard} ${currentPlayer === p ? styles.activePlayer : ''}`}>
-            <div className={styles.playerEmoji}>{emojis[p]}</div>
-            <div className={styles.playerName}>{p}</div>
-          </div>
-        ))}
+      <div className={styles.topBar}>
+        <div className={styles.historyBox}>
+          <h4>Tidligere:</h4>
+          {recentHistory.map((entry, idx) => (
+            <p key={idx}>
+              <strong>{entry.player}</strong> - <strong>{entry.roll}</strong>
+            </p>
+          ))}
+        </div>
+        <div className={styles.title}>
+          <img src="/images/rundekultur-logo.png" alt="Rundekultur logo" className={styles.logo} />
+        </div>
+        <div className={styles.pin}>PIN: {pin}</div>
       </div>
 
       {!isOver ? (
         <>
-          <h2 className={styles.header}>🎲 Death-roll</h2>
           <p className={styles.subtext}>
-            Tur: <strong>{currentPlayer}</strong>
+            Det er {currentPlayer} sin tur. Mellom 1–{currentMax}
           </p>
-
+          {displayedRoll && <div className={`${styles.diceAnimation} ${getRollColorClass(displayedRoll, currentMax)}`}>{displayedRoll}</div>}
           {name === currentPlayer ? (
             <button onClick={handleRoll} className={styles.rollButton} disabled={isRolling}>
-              {isRolling ? 'Ruller…' : 'Kast'}
+              {isRolling ? 'Ruller…' : 'RULL!'}
             </button>
           ) : (
             <p>Venter på at {currentPlayer} kaster…</p>
           )}
-
-          {displayedRoll && <div className={`${styles.diceAnimation} ${rollColorClass}`}>{displayedRoll}</div>}
-
-          <div className={styles.historyBox}>
-            <h3>Tur‑historikk:</h3>
-            <ul>
-              {[...history].reverse().map((entry, idx) => (
-                <li key={idx} className={styles.historyItem}>
-                  <span>{emojis[entry.player]}</span> <strong>{entry.player}</strong> rullet <strong>{entry.roll}</strong>
-                </li>
-              ))}
-            </ul>
-          </div>
         </>
       ) : (
         <>
           <h2 className={styles.header}>🎉 Spill over!</h2>
           <p>
-            <strong>{loser}</strong> rullet 1 og tapte {lossOdds ? `med ${lossOdds} odds` : ''}!
+            {loser} rullet 1 og tapte med {odds?.toFixed(2)}% odds!
           </p>
 
           <Spinner options={wheelOptions} result={spinResult} />
@@ -238,6 +227,15 @@ function GamePage() {
           )}
         </>
       )}
+
+      <div className={styles.playerBar}>
+        {players.map((p) => (
+          <div key={p} className={`${styles.playerCard} ${currentPlayer === p ? styles.activePlayer : ''}`}>
+            <div className={styles.playerEmoji}>{emojis[p]}</div>
+            <div className={styles.playerName}>{p}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

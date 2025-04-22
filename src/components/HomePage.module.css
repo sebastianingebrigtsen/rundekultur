@@ -8,6 +8,11 @@
   height: 100vh;
   overflow: hidden;
 }
+.logo {
+  width: 160px;
+  height: auto;
+  margin-bottom: -1rem;
+}
 
 .emoji {
   position: absolute;
