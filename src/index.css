@@ -1,6 +1,12 @@
 /* src/index.css */
 /* Globale stiler til appen */
-body {
+html,
+body,
+#root {
   margin: 0;
-  font-family: Arial, sans-serif;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+  touch-action: manipulation; /* Gir bedre touch-feedback */
+  font-family: system-ui, sans-serif;
 }

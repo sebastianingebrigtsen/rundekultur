@@ -1,8 +1,8 @@
-// src/components/HomePage.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, set, get, onDisconnect } from 'firebase/database';
 import { database } from '../firebase';
+import styles from './HomePage.module.css';
 
 function HomePage() {
   const navigate = useNavigate();
@@ -104,78 +104,94 @@ function HomePage() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '2rem auto', textAlign: 'center', padding: '1rem' }}>
-      <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>🎲 Rundekultur</h1>
+    <div className={styles.background}>
+      {/* Bakgrunnsemojier */}
+      <div className={styles.emoji} style={{ top: '10%', left: '10%', transform: 'rotate(-15deg)' }}>
+        🍺
+      </div>
+      <div className={styles.emoji} style={{ top: '25%', right: '12%', transform: 'rotate(20deg)' }}>
+        🍷
+      </div>
+      <div className={styles.emoji} style={{ top: '40%', left: '5%', transform: 'rotate(-30deg)' }}>
+        🍹
+      </div>
+      <div className={styles.emoji} style={{ top: '55%', right: '20%', transform: 'rotate(5deg)' }}>
+        🍻
+      </div>
+      <div className={styles.emoji} style={{ bottom: '25%', left: '15%', transform: 'rotate(10deg)' }}>
+        🍸
+      </div>
+      <div className={styles.emoji} style={{ bottom: '10%', right: '5%', transform: 'rotate(-20deg)' }}>
+        🎲
+      </div>
+      <div className={styles.emoji} style={{ bottom: '15%', left: '50%', transform: 'rotate(12deg)' }}>
+        🍷
+      </div>
+      <div className={styles.emoji} style={{ top: '5%', right: '40%', transform: 'rotate(-8deg)' }}>
+        🍹
+      </div>
 
-      {!name ? (
-        <>
-          <input
-            type="text"
-            placeholder="Skriv inn navnet ditt"
-            value={tempName}
-            onChange={(e) => setTempName(e.target.value)}
-            style={{ width: '100%', padding: '10px', marginBottom: '12px', fontSize: '1rem' }}
-          />
-          <button onClick={saveName} style={{ width: '100%', padding: '12px', marginBottom: '16px', fontSize: '1rem' }}>
-            Lagre navn
-          </button>
-
-          {lastLobby && (
-            <button
-              onClick={handleJoinLast}
-              style={{ width: '100%', padding: '12px', marginBottom: '16px', background: '#eee', fontSize: '0.95rem' }}
-            >
-              Gjenoppta tidligere lobby: "{lastLobby.lobbyName}"
-            </button>
-          )}
-        </>
-      ) : (
-        <>
-          <p style={{ fontSize: '1.1rem' }}>
+      <div className={styles.container}>
+        <h1 className={styles.title}>🎲 Rundekultur</h1>
+        {name && (
+          <p className={styles.greeting}>
             Hei, <strong>{name}</strong>!
           </p>
+        )}
 
-          <button onClick={handleStart} style={{ width: '100%', padding: '12px', marginBottom: '10px', fontSize: '1.1rem' }}>
-            Start et nytt spill
-          </button>
-
-          {!showJoinField && (
-            <button onClick={() => setShowJoinField(true)} style={{ width: '100%', padding: '12px', marginBottom: '10px', fontSize: '1.1rem' }}>
-              Bli med i spill
+        {!name ? (
+          <>
+            <input
+              type="text"
+              placeholder="Skriv inn navnet ditt"
+              value={tempName}
+              onChange={(e) => setTempName(e.target.value)}
+              className={styles.input}
+            />
+            <button onClick={saveName} className={styles.button}>
+              Lagre navn
             </button>
-          )}
-
-          {showJoinField && (
-            <>
-              <div style={{ marginBottom: '12px' }}>
-                <input
-                  type="text"
-                  placeholder="Skriv inn PIN"
-                  value={pinInput}
-                  onChange={(e) => setPinInput(e.target.value)}
-                  style={{ width: '70%', padding: '10px', fontSize: '1rem' }}
-                />
-                <button onClick={handleJoin} style={{ width: '28%', padding: '10px', marginLeft: '2%', fontSize: '1rem' }}>
+          </>
+        ) : (
+          <>
+            {!showJoinField ? (
+              <div className={styles.buttonRow}>
+                <button onClick={handleStart} className={styles.button}>
+                  Start spill
+                </button>
+                <button onClick={() => setShowJoinField(true)} className={styles.button}>
                   Bli med
                 </button>
               </div>
-              <button onClick={() => setShowJoinField(false)} style={{ width: '100%', padding: '10px', background: '#ddd' }}>
-                Tilbake
-              </button>
-            </>
+            ) : (
+              <>
+                <div className={styles.joinField}>
+                  <input type="text" placeholder="PIN" value={pinInput} onChange={(e) => setPinInput(e.target.value)} className={styles.input} />
+                  <button onClick={handleJoin} className={styles.buttonSmall}>
+                    Bli med
+                  </button>
+                </div>
+                <button onClick={() => setShowJoinField(false)} className={styles.secondaryButton}>
+                  Tilbake
+                </button>
+              </>
+            )}
+          </>
+        )}
+
+        <div className={styles.footer}>
+          {name && (
+            <button onClick={handleEditName} className={styles.footerButton}>
+              Endre navn
+            </button>
           )}
-
-          <button onClick={handleEditName} style={{ width: '100%', padding: '10px', marginTop: '16px', background: '#eee', fontSize: '0.95rem' }}>
-            Endre navn
-          </button>
-
-          {lastLobby && (
-            <button onClick={handleJoinLast} style={{ width: '100%', padding: '12px', marginTop: '16px', background: '#eee', fontSize: '0.95rem' }}>
+          {lastLobby && name && (
+            <button onClick={handleJoinLast} className={styles.footerButton}>
               Gjenoppta tidligere lobby: "{lastLobby.lobbyName}"
             </button>
           )}
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
