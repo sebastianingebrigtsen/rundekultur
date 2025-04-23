@@ -1,14 +1,14 @@
 // src/components/GamePage.js
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ref, onValue, update, remove, runTransaction, get } from 'firebase/database';
-import { database } from '../firebase';
 import styles from './GamePage.module.css';
 import Spinner from './Spinner';
+import { subscribeLobby, subscribeGame, rollDice, spinWheel, resetGame } from '../services/lobbyService';
+import { emojiList } from '../utils/emojiList';
+import PlayerList from './PlayerList';
 
-const emojiList = ['😎', '😈', '👻', '🤠', '👽', '🐸', '😺', '🧙‍♂️', '🧛‍♀️', '🧞', '🤡', '🥸'];
-
-function GamePage() {
+export default function GamePage() {
   const { pin } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,39 +23,18 @@ function GamePage() {
   const [displayedRoll, setDisplayedRoll] = useState(null);
   const [showResultText, setShowResultText] = useState(false);
 
-  const animateRoll = (start, end) => {
-    const steps = 20;
-    const interval = 30;
-    const diff = start - end;
-    let i = 0;
-    const intervalId = setInterval(() => {
-      const ratio = i / steps;
-      const current = Math.floor(start - diff * ratio);
-      setDisplayedRoll(current);
-      i++;
-      if (i > steps) clearInterval(intervalId);
-    }, interval);
-  };
-
-  const getRollColorClass = (roll, max) => {
-    const ratio = roll / max;
-    if (ratio > 0.7) return styles.diceGreen;
-    if (ratio > 0.4) return styles.diceOrange;
-    if (ratio > 0.2) return styles.diceRed;
-    return styles.diceDarkRed;
-  };
-
+  // Offline-alert
   useEffect(() => {
-    const handleOffline = () => {
+    const goOffline = () => {
       setIsOffline(true);
       localStorage.setItem('wasDisconnected', 'true');
     };
-    const handleOnline = () => setIsOffline(false);
-    window.addEventListener('offline', handleOffline);
-    window.addEventListener('online', handleOnline);
+    const goOnline = () => setIsOffline(false);
+    window.addEventListener('offline', goOffline);
+    window.addEventListener('online', goOnline);
     return () => {
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', goOffline);
+      window.removeEventListener('online', goOnline);
     };
   }, []);
 
@@ -66,28 +45,27 @@ function GamePage() {
     }
   }, []);
 
+  // Subscribe lobby & game
   useEffect(() => {
-    const unsubLobby = onValue(ref(database, `lobbies/${pin}`), (snap) => {
-      const data = snap.val();
+    const unsubL = subscribeLobby(pin, (data) => {
       if (!data) return navigate('/');
-      const playerList = Object.keys(data.players || {});
-      setPlayers(playerList);
+      const list = Object.keys(data.players || {});
+      setPlayers(list);
       setWheelOptions(data.wheelOptions || []);
-      const stored = {};
-      playerList.forEach((player, i) => {
-        stored[player] = emojiList[i % emojiList.length];
-      });
-      setEmojis(stored);
+      const map = {};
+      list.forEach((p, i) => (map[p] = emojiList[i % emojiList.length]));
+      setEmojis(map);
     });
 
-    const unsubGame = onValue(ref(database, `lobbies/${pin}/game`), (snap) => {
-      const g = snap.val();
+    const unsubG = subscribeGame(pin, (g) => {
       if (g) {
         setGameState(g);
+        // Animasjon for siste kast
         if (g.history?.length) {
           const last = g.history[g.history.length - 1];
-          if (last?.roll && last?.max) animateRoll(last.max, last.roll);
+          animateRoll(last.max, last.roll);
         }
+        // Vis resultattekst etter spinner
         if (g.isOver && g.spinResult) {
           setTimeout(() => setShowResultText(true), 3000);
         }
@@ -95,69 +73,63 @@ function GamePage() {
     });
 
     return () => {
-      unsubLobby();
-      unsubGame();
+      unsubL();
+      unsubG();
     };
   }, [pin, navigate]);
 
+  // Redirect if no name
   useEffect(() => {
     if (!name) navigate('/');
   }, [name, navigate]);
 
+  const animateRoll = (start, end) => {
+    const steps = 20;
+    const interval = 30;
+    const diff = start - end;
+    let i = 0;
+    const id = setInterval(() => {
+      const ratio = i / steps;
+      setDisplayedRoll(Math.floor(start - diff * ratio));
+      i++;
+      if (i > steps) clearInterval(id);
+    }, interval);
+  };
+
+  const getRollColorClass = (roll, max) => {
+    const r = roll / max;
+    if (r > 0.7) return styles.diceGreen;
+    if (r > 0.4) return styles.diceOrange;
+    if (r > 0.2) return styles.diceRed;
+    return styles.diceDarkRed;
+  };
+
   const handleRoll = () => {
     setIsRolling(true);
-    const prevMax = gameState.currentMax;
-    const roll = Math.floor(Math.random() * prevMax) + 1;
-    const newHistory = Array.isArray(gameState.history) ? [...gameState.history] : [];
-    newHistory.push({ player: name, roll, max: prevMax });
-
-    const updates = { currentMax: roll, history: newHistory };
-
-    if (roll === 1) {
-      updates.isOver = true;
-      updates.loser = name;
-      runTransaction(ref(database, `lobbies/${pin}/stats/losses/${name}`), (count) => (count || 0) + 1);
-
-      const newOdds = 1 / prevMax;
-      runTransaction(ref(database, `lobbies/${pin}/stats/topOdds`), (current) => {
-        const entry = { player: name, max: prevMax, odds: newOdds };
-        const arr = Array.isArray(current) ? [...current, entry] : [entry];
-        arr.sort((a, b) => a.odds - b.odds);
-        return arr.slice(0, 3);
-      });
-
-      get(ref(database, `lobbies/${pin}/stats/roundsPlayed`)).then((snap) => {
-        const prev = snap.val() || 0;
-        update(ref(database, `lobbies/${pin}/stats`), { roundsPlayed: prev + 1 });
-      });
-    } else {
-      updates.currentPlayerIdx = (gameState.currentPlayerIdx + 1) % players.length;
-    }
-
-    update(ref(database, `lobbies/${pin}/game`), updates);
-    setIsRolling(false);
+    rollDice(pin, name, gameState, players).then(() => {
+      setIsRolling(false);
+    });
   };
 
   const handleSpin = () => {
     if (!wheelOptions.length) return;
     setShowResultText(false);
     const choice = wheelOptions[Math.floor(Math.random() * wheelOptions.length)];
-    update(ref(database, `lobbies/${pin}/game`), { spinResult: choice });
+    spinWheel(pin, choice);
   };
 
   const handlePlayAgain = () => {
-    remove(ref(database, `lobbies/${pin}/game`));
-    navigate(`/lobby/${pin}`, { state: { name } });
+    resetGame(pin).then(() => {
+      navigate(`/lobby/${pin}`, { state: { name } });
+    });
   };
 
   if (!gameState || players.length === 0) return <p>Laster spill…</p>;
 
   const { currentMax, currentPlayerIdx, isOver, loser, spinResult, history = [] } = gameState;
   const currentPlayer = players[currentPlayerIdx];
-
   const lastEntry = history.length ? history[history.length - 1] : null;
-  const odds = lastEntry && lastEntry.player === loser ? (1 / lastEntry.max) * 100 : null;
-
+  const odds = lastEntry?.player === loser ? (1 / lastEntry.max) * 100 : null;
   const recentHistory = history.slice(-4).reverse();
 
   return (
@@ -167,9 +139,9 @@ function GamePage() {
       <div className={styles.topBar}>
         <div className={styles.historyBox}>
           <h4>Tidligere:</h4>
-          {recentHistory.map((entry, idx) => (
-            <p key={idx}>
-              <strong>{entry.player}</strong> - <strong>{entry.roll}</strong>
+          {recentHistory.map((e, i) => (
+            <p key={i}>
+              <strong>{e.player}</strong> - <strong>{e.roll}</strong>
             </p>
           ))}
         </div>
@@ -208,14 +180,10 @@ function GamePage() {
             </button>
           )}
 
-          {spinResult ? (
-            showResultText && (
-              <p>
-                <strong>{loser}</strong> skal kjøpe en <strong>{spinResult}</strong> til alle sammen! Skål for {loser}!
-              </p>
-            )
-          ) : (
-            <p>Venter på at {loser} skal spinne…</p>
+          {spinResult && showResultText && (
+            <p>
+              <strong>{loser}</strong> skal kjøpe en <strong>{spinResult}</strong> til alle sammen! Skål for {loser}!
+            </p>
           )}
 
           {spinResult && showResultText && (
@@ -228,16 +196,7 @@ function GamePage() {
         </>
       )}
 
-      <div className={styles.playerBar}>
-        {players.map((p) => (
-          <div key={p} className={`${styles.playerCard} ${currentPlayer === p ? styles.activePlayer : ''}`}>
-            <div className={styles.playerEmoji}>{emojis[p]}</div>
-            <div className={styles.playerName}>{p}</div>
-          </div>
-        ))}
-      </div>
+      <PlayerList players={players} emojis={emojis} activePlayer={currentPlayer} layout="bar" />
     </div>
   );
 }
-
-export default GamePage;
