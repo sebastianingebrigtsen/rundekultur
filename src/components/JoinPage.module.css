@@ -1,0 +1,55 @@
+/* src/components/JoinPage.module.css */
+
+.wrapper {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background-color: #fff8dc;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  z-index: 1;
+}
+
+.title {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  border: 1px solid #000000;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+.button {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  background-color: #ffde59;
+  color: rgb(0, 0, 0);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.button:hover {
+  background-color: #f7d032;
+}

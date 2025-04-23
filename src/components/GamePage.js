@@ -7,6 +7,7 @@ import Spinner from './Spinner';
 import { subscribeLobby, subscribeGame, rollDice, spinWheel, resetGame } from '../services/lobbyService';
 import { emojiList } from '../utils/emojiList';
 import PlayerList from './PlayerList';
+import EmojiBackground from './EmojiBackground'; // ← Legg til denne importen
 
 export default function GamePage() {
   const { pin } = useParams();
@@ -20,10 +21,13 @@ export default function GamePage() {
   const [isOffline, setIsOffline] = useState(false);
   const [emojis, setEmojis] = useState({});
   const [isRolling, setIsRolling] = useState(false);
+
+  // States for roll animation and fixed initial max
   const [displayedRoll, setDisplayedRoll] = useState(null);
+  const [initialMax, setInitialMax] = useState(null);
   const [showResultText, setShowResultText] = useState(false);
 
-  // Offline-alert
+  // Handle offline/online
   useEffect(() => {
     const goOffline = () => {
       setIsOffline(true);
@@ -47,7 +51,7 @@ export default function GamePage() {
 
   // Subscribe lobby & game
   useEffect(() => {
-    const unsubL = subscribeLobby(pin, (data) => {
+    const unsubLobby = subscribeLobby(pin, (data) => {
       if (!data) return navigate('/');
       const list = Object.keys(data.players || {});
       setPlayers(list);
@@ -57,15 +61,17 @@ export default function GamePage() {
       setEmojis(map);
     });
 
-    const unsubG = subscribeGame(pin, (g) => {
+    const unsubGame = subscribeGame(pin, (g) => {
       if (g) {
         setGameState(g);
-        // Animasjon for siste kast
+        // Set initialMax only once, based on the very first currentMax
+        if (initialMax == null && typeof g.currentMax === 'number') {
+          setInitialMax(g.currentMax);
+        }
         if (g.history?.length) {
           const last = g.history[g.history.length - 1];
           animateRoll(last.max, last.roll);
         }
-        // Vis resultattekst etter spinner
         if (g.isOver && g.spinResult) {
           setTimeout(() => setShowResultText(true), 3000);
         }
@@ -73,35 +79,53 @@ export default function GamePage() {
     });
 
     return () => {
-      unsubL();
-      unsubG();
+      unsubLobby();
+      unsubGame();
     };
-  }, [pin, navigate]);
+  }, [pin, navigate, initialMax]);
 
   // Redirect if no name
   useEffect(() => {
     if (!name) navigate('/');
   }, [name, navigate]);
 
+  // Animate roll from start to end
   const animateRoll = (start, end) => {
-    const steps = 20;
-    const interval = 30;
+    setDisplayedRoll(start);
+    const steps = 30;
+    const interval = 50;
     const diff = start - end;
     let i = 0;
     const id = setInterval(() => {
-      const ratio = i / steps;
-      setDisplayedRoll(Math.floor(start - diff * ratio));
       i++;
-      if (i > steps) clearInterval(id);
+      if (i <= steps) {
+        const val = Math.floor(start - diff * (i / steps));
+        setDisplayedRoll(val);
+      } else {
+        clearInterval(id);
+        setDisplayedRoll(end);
+      }
     }, interval);
   };
 
-  const getRollColorClass = (roll, max) => {
-    const r = roll / max;
-    if (r > 0.7) return styles.diceGreen;
-    if (r > 0.4) return styles.diceOrange;
-    if (r > 0.2) return styles.diceRed;
-    return styles.diceDarkRed;
+  // Dynamic color based on displayedRoll relative to fixed initialMax with extended orange/yellow and deep red under 10
+  const getDiceStyle = () => {
+    if (displayedRoll == null || initialMax == null) return {};
+    const ratio = Math.max(0, Math.min(1, displayedRoll / initialMax));
+    // thresholds
+    const redThreshold = 30000 / initialMax; // below this moves into red-yellow zone
+    const deepRedThreshold = 10 / initialMax; // below this is deep red
+    let hue;
+    if (ratio <= deepRedThreshold) {
+      hue = 0; // deep red
+    } else if (ratio <= redThreshold) {
+      // map ratio [deepRedThreshold..redThreshold] to hue [0..60]
+      hue = ((ratio - deepRedThreshold) / (redThreshold - deepRedThreshold)) * 60;
+    } else {
+      // map ratio [redThreshold..1] to hue [60..120]
+      hue = 60 + ((ratio - redThreshold) / (1 - redThreshold)) * 60;
+    }
+    return { color: `hsl(${Math.round(hue)},100%,40%)` };
   };
 
   const handleRoll = () => {
@@ -128,12 +152,12 @@ export default function GamePage() {
 
   const { currentMax, currentPlayerIdx, isOver, loser, spinResult, history = [] } = gameState;
   const currentPlayer = players[currentPlayerIdx];
-  const lastEntry = history.length ? history[history.length - 1] : null;
-  const odds = lastEntry?.player === loser ? (1 / lastEntry.max) * 100 : null;
   const recentHistory = history.slice(-4).reverse();
 
   return (
     <div className={styles.gameWrapper}>
+      {/* Bakgrunnsemojier */}
+      <EmojiBackground />
       {isOffline && <div className={styles.warning}>⚠ Du er frakoblet – sjekk internettforbindelsen din.</div>}
 
       <div className={styles.topBar}>
@@ -153,10 +177,14 @@ export default function GamePage() {
 
       {!isOver ? (
         <>
-          <p className={styles.subtext}>
-            Det er {currentPlayer} sin tur. Mellom 1–{currentMax}
-          </p>
-          {displayedRoll && <div className={`${styles.diceAnimation} ${getRollColorClass(displayedRoll, currentMax)}`}>{displayedRoll}</div>}
+          <p className={styles.subtext}>Det er {currentPlayer} sin tur</p>
+
+          {displayedRoll !== null && (
+            <div className={styles.diceAnimation} style={getDiceStyle()}>
+              {displayedRoll}
+            </div>
+          )}
+
           {name === currentPlayer ? (
             <button onClick={handleRoll} className={styles.rollButton} disabled={isRolling}>
               {isRolling ? 'Ruller…' : 'RULL!'}
@@ -169,7 +197,7 @@ export default function GamePage() {
         <>
           <h2 className={styles.header}>🎉 Spill over!</h2>
           <p>
-            {loser} rullet 1 og tapte med {odds?.toFixed(2)}% odds!
+            <strong>{loser}</strong> rullet 1 og tapte med {((1 / history[history.length - 1].max) * 100).toFixed()}% odds!
           </p>
 
           <Spinner options={wheelOptions} result={spinResult} />
@@ -182,16 +210,14 @@ export default function GamePage() {
 
           {spinResult && showResultText && (
             <p>
-              <strong>{loser}</strong> skal kjøpe en <strong>{spinResult}</strong> til alle sammen! Skål for {loser}!
+              <strong>{loser}</strong> skal kjøpe en <strong>{spinResult}</strong> til alle sammen!
             </p>
           )}
 
           {spinResult && showResultText && (
-            <div>
-              <button onClick={handlePlayAgain} className={styles.playAgainButton}>
-                Spill igjen
-              </button>
-            </div>
+            <button onClick={handlePlayAgain} className={styles.playAgainButton}>
+              Spill igjen
+            </button>
           )}
         </>
       )}

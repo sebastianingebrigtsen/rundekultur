@@ -78,14 +78,15 @@
   margin-bottom: 0.5rem;
 }
 .subtleInfo {
-  font-size: 0.85rem;
+  font-size: 0.65rem;
   color: #666;
   margin-bottom: 1rem;
 }
 .startButton {
-  background: #28a745;
-  color: #fff;
-  padding: 10px 20px;
+  background: #ffe370;
+  color: #000000;
+  padding: 15px 30px;
+  font-size: 1.2rem;
   border: none;
   border-radius: 6px;
   cursor: pointer;

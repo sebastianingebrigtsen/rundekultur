@@ -175,7 +175,7 @@ export default function Lobby() {
       {view === 'lobby' ? (
         <>
           <h2 className={styles.sectionTitle}>
-            Lobby-PIN: <strong>{pin}</strong>
+            Spill kode: <strong>{pin}</strong>
           </h2>
           <p className={styles.subtleInfo}>
             Vert: {host} | Runder spilt: {roundsPlayed}
