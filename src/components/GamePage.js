@@ -197,7 +197,7 @@ export default function GamePage() {
         <>
           <h2 className={styles.header}>🎉 Spill over!</h2>
           <p>
-            <strong>{loser}</strong> rullet 1 og tapte med {((1 / history[history.length - 1].max) * 100).toFixed()}% odds!
+            <strong>{loser}</strong> tapte med {((1 / history[history.length - 1].max) * 100).toFixed()}% odds!
           </p>
 
           <Spinner options={wheelOptions} result={spinResult} />
