@@ -151,6 +151,18 @@
   border-radius: 4px;
   cursor: pointer;
 }
+/* src/components/HomePage.module.css */
+
+.input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 12px;
+  font-size: 16px; /* minimum 16px for iOS */
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
 .playerGrid {
   display: flex;
   flex-wrap: wrap;

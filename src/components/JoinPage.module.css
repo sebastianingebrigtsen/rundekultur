@@ -28,6 +28,15 @@
   color: #333;
 }
 
+/* src/components/JoinPage.module.css */
+
+.logo {
+  display: block;
+  margin: 0 auto 1rem;
+  height: 150px;
+  object-fit: contain;
+}
+
 .input {
   width: 100%;
   padding: 12px;

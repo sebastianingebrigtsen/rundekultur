@@ -49,9 +49,24 @@ export default function JoinPage() {
     <div className={styles.wrapper}>
       <EmojiBackground />
       <div className={styles.container}>
+        {/* Logo øverst */}
+        <img src="/images/rundekultur-logo.png" alt="Rundekultur logo" className={styles.logo} />
         <h2 className={styles.title}>Bli med i lobby</h2>
-        <input className={styles.input} type="text" placeholder="Navnet ditt" value={name} onChange={(e) => setName(e.target.value)} />
-        <input className={styles.input} type="text" placeholder="PIN" value={pin} onChange={(e) => setPin(e.target.value)} />
+        <input className={styles.input} type="text" placeholder="Navnet ditt" value={name} onChange={(e) => setName(e.target.value)} />+{' '}
+        <input
+          className={styles.input}
+          type="text"
+          placeholder="PIN"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={4}
+          value={pin}
+          onChange={(e) => {
+            // Fjern alt som ikke er siffer
+            const onlyNums = e.target.value.replace(/\D/g, '');
+            setPin(onlyNums);
+          }}
+        />{' '}
         <button onClick={handleJoin} className={styles.button}>
           Bli med
         </button>

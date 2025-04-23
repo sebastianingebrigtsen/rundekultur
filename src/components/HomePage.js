@@ -53,6 +53,7 @@ function HomePage() {
       lobbyName: `Lobby ${pin}`,
       players: { [name]: { connected: true } },
       wheelOptions: ['drink', 'cider', 'øl', 'vin', 'shot'],
+      createdAt: Date.now(),
     };
     set(ref(database, `lobbies/${pin}`), fullLobby);
     onDisconnect(ref(database, `lobbies/${pin}/players/${name}/connected`)).set(false);
@@ -176,7 +177,20 @@ function HomePage() {
             ) : (
               <>
                 <div className={styles.joinField}>
-                  <input type="text" placeholder="PIN" value={pinInput} onChange={(e) => setPinInput(e.target.value)} className={styles.input} />
+                  <input
+                    type="text"
+                    placeholder="PIN"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={4}
+                    value={pinInput}
+                    onChange={(e) => {
+                      // fjern alt som ikke er siffer
+                      const onlyNums = e.target.value.replace(/\D/g, '');
+                      setPinInput(onlyNums);
+                    }}
+                    className={styles.input}
+                  />{' '}
                   <button onClick={handleJoin} className={styles.buttonSmall}>
                     Bli med
                   </button>

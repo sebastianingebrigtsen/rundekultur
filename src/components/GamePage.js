@@ -190,7 +190,7 @@ export default function GamePage() {
               {isRolling ? 'Ruller…' : 'RULL!'}
             </button>
           ) : (
-            <p>Venter på at {currentPlayer} kaster…</p>
+            <p className={styles.rollPlaceholder}>Venter på at {currentPlayer} kaster…</p>
           )}
         </>
       ) : (

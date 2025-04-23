@@ -25,6 +25,19 @@ export default function Lobby() {
   const location = useLocation();
   const name = location.state?.name;
 
+  // 🧠 Løsning for iPhone-zoom: scroll til toppen når tastatur forsvinner
+  useEffect(() => {
+    const handleBlur = () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    // finn alle input- og textarea-felter
+    const els = Array.from(document.querySelectorAll('input, textarea'));
+    els.forEach((el) => el.addEventListener('blur', handleBlur));
+    return () => {
+      els.forEach((el) => el.removeEventListener('blur', handleBlur));
+    };
+  }, []);
+
   const [host, setHost] = useState('');
   const [players, setPlayers] = useState({});
   const [wheelOptions, setWheelOptions] = useState([]);
