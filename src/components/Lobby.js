@@ -34,13 +34,14 @@ export default function Lobby() {
   const [isOffline, setIsOffline] = useState(false);
   const [emojis, setEmojis] = useState({});
   const [view, setView] = useState('lobby');
-  const [showQR, setShowQR] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [shareQROpen, setShareQROpen] = useState(false);
+  const [wheelOpen, setWheelOpen] = useState(false);
 
   const isHost = name === host;
   const lobbyUrl = `${window.location.origin}/join?pin=${pin}`;
 
-  // Offline-alert
+  // Handle offline/online status
   useEffect(() => {
     const goOffline = () => {
       setIsOffline(true);
@@ -54,6 +55,7 @@ export default function Lobby() {
       window.removeEventListener('online', goOnline);
     };
   }, []);
+
   useEffect(() => {
     if (localStorage.getItem('wasDisconnected')) {
       alert('Du mistet tilkoblingen, men er nå koblet til igjen.');
@@ -61,31 +63,31 @@ export default function Lobby() {
     }
   }, []);
 
-  // Subscribe lobby data
+  // Subscribe to lobby data
   useEffect(() => {
     const unsub = subscribeLobby(pin, (data) => {
       if (!data) return navigate('/');
       setPlayers(data.players || {});
       setWheelOptions(data.wheelOptions || []);
-
-      const names = Object.keys(data.players || {});
+      const list = Object.keys(data.players || {});
       const map = {};
-      names.forEach((p, i) => {
+      list.forEach((p, i) => {
         map[p] = emojiList[i % emojiList.length];
       });
       setEmojis(map);
-
-      if (data.host && !names.includes(data.host)) {
-        changeHost(pin, names[0] || '');
+      if (data.host && !list.includes(data.host)) {
+        changeHost(pin, list[0] || '');
       }
       setHost(data.host);
     });
     return unsub;
   }, [pin, navigate]);
 
-  // Subscribe stats & roundsPlayed
+  // Subscribe to stats
   useEffect(() => {
-    const unsubStats = subscribeStats(pin, (s) => setStats({ losses: s.losses || {}, topOdds: s.topOdds || [] }));
+    const unsubStats = subscribeStats(pin, (s) => {
+      setStats({ losses: s.losses || {}, topOdds: s.topOdds || [] });
+    });
     const unsubRounds = subscribeRoundsPlayed(pin, (r) => setRoundsPlayed(r));
     return () => {
       unsubStats();
@@ -110,21 +112,8 @@ export default function Lobby() {
     return unsubGame;
   }, [pin, navigate, name]);
 
-  const handleAddOption = () => {
-    const t = newOption.trim();
-    if (!t) return;
-    addWheelOption(pin, t);
-    setNewOption('');
-  };
-
-  const handleRemoveOption = (idx) => {
-    removeWheelOption(pin, idx);
-  };
-
-  const handleStart = () => {
-    startGame(pin);
-  };
-
+  // Handlers
+  const handleStart = () => startGame(pin);
   const handleCopyLink = () => {
     try {
       navigator.clipboard.writeText(lobbyUrl);
@@ -133,51 +122,58 @@ export default function Lobby() {
       alert('Kunne ikke kopiere lenken.');
     }
   };
+  const handleAddOption = () => {
+    const t = newOption.trim();
+    if (!t) return;
+    addWheelOption(pin, t);
+    setNewOption('');
+  };
+  const handleRemoveOption = (idx) => removeWheelOption(pin, idx);
 
   return (
     <div className={styles.wrapper}>
-      {/* Header med tilbakeknapp og tab-knapper */}
+      {/* Header */}
       <div className={styles.headerRow}>
-        <button onClick={() => navigate('/')} className={styles.backButton}>
-          Tilbake
-        </button>
-        <div className={styles.tabSwitcherRow}>
-          <button onClick={() => setView('lobby')} className={styles.tabButton}>
+        <div className={styles.backAndTabs}>
+          <button onClick={() => navigate('/')} className={styles.backButton}>
+            Tilbake
+          </button>
+          <button onClick={() => setView('lobby')} className={`${styles.tabButton} ${view === 'lobby' ? styles.activeTab : ''}`}>
             Lobby
           </button>
-          <button onClick={() => setView('leaderboard')} className={styles.tabButton}>
+          <button onClick={() => setView('leaderboard')} className={`${styles.tabButton} ${view === 'leaderboard' ? styles.activeTab : ''}`}>
             Leaderboard
           </button>
-          <div className={styles.dropdown}>
-            <button onClick={() => setDropdownOpen((o) => !o)} className={styles.dropdownBtn}>
-              Del ▼
-            </button>
-            {dropdownOpen && (
-              <div className={styles.dropdownContent}>
-                <button onClick={() => setShowQR((q) => !q)} className={styles.dropdownItem}>
-                  Vis QR-kode
-                </button>
-                <button onClick={handleCopyLink} className={styles.dropdownItem}>
-                  Kopier lenke
-                </button>
-                {showQR && (
-                  <div style={{ marginTop: '0.5rem' }}>
-                    <QRCodeCanvas value={lobbyUrl} size={120} includeMargin />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+        </div>
+        <div className={styles.dropdown}>
+          <button onClick={() => setDropdownOpen((o) => !o)} className={styles.dropdownBtn}>
+            Del ▼
+          </button>
+          {dropdownOpen && (
+            <div className={styles.dropdownContent}>
+              <button onClick={() => setShareQROpen((q) => !q)} className={styles.dropdownItem}>
+                QR-kode
+              </button>
+              <button onClick={handleCopyLink} className={styles.dropdownItem}>
+                Kopier lenke
+              </button>
+              {shareQROpen && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <QRCodeCanvas value={lobbyUrl} size={120} includeMargin />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {isOffline && <div className={styles.warning}>⚠ Du er frakoblet – sjekk internettforbindelsen din.</div>}
 
+      {/* Logo */}
+      <img src="/images/rundekultur-logo.png" alt="Rundekultur logo" className={styles.logoMain} />
+
       {view === 'lobby' ? (
         <>
-          {/* Logo over PIN */}
-          <img src="/images/rundekultur-logo.png" alt="Rundekultur logo" className={styles.logoMain} />
-
           <h2 className={styles.sectionTitle}>
             Lobby-PIN: <strong>{pin}</strong>
           </h2>
@@ -185,14 +181,12 @@ export default function Lobby() {
             Vert: {host} | Runder spilt: {roundsPlayed}
           </p>
 
-          {/* Start spill */}
           {isHost && (
             <button onClick={handleStart} className={styles.startButton}>
               Start spill
             </button>
           )}
 
-          {/* Spillerliste */}
           <div className={styles.playerSection}>
             <PlayerList
               players={players}
@@ -204,57 +198,65 @@ export default function Lobby() {
             />
           </div>
 
-          {/* Hjulvalg */}
-          <details className={styles.detailsBox}>
-            <summary className={styles.detailsSummary}>Hjulvalg</summary>
-            <div className={styles.wheelList}>
-              {wheelOptions.map((opt, idx) => (
-                <div key={idx} className={styles.wheelItemRow}>
-                  <span>{opt}</span>
-                  {isHost && (
-                    <button onClick={() => handleRemoveOption(idx)} className={styles.removeWheelBtn}>
-                      ×
+          {/* Foldbart hjulvalg */}
+          <div className={styles.wheelToggleContainer}>
+            <button onClick={() => setWheelOpen((w) => !w)} className={styles.wheelToggleBtn}>
+              {wheelOpen ? 'Skjul hjulvalg' : 'Vis hjulvalg'}
+            </button>
+            {wheelOpen && (
+              <div className={styles.wheelDropdown}>
+                {wheelOptions.map((opt, idx) => (
+                  <div key={idx} className={styles.wheelItemRow}>
+                    <span>{opt}</span>
+                    {isHost && (
+                      <button onClick={() => handleRemoveOption(idx)} className={styles.removeWheelBtn}>
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {isHost && (
+                  <div className={styles.addWheelContainer}>
+                    <input
+                      type="text"
+                      placeholder="Nytt alternativ"
+                      value={newOption}
+                      onChange={(e) => setNewOption(e.target.value)}
+                      className={styles.addWheelInput}
+                    />
+                    <button onClick={handleAddOption} className={styles.addWheelButton}>
+                      Legg til
                     </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            {isHost && (
-              <div className={styles.addWheelContainer}>
-                <input
-                  type="text"
-                  placeholder="Nytt alternativ"
-                  value={newOption}
-                  onChange={(e) => setNewOption(e.target.value)}
-                  className={styles.addWheelInput}
-                />
-                <button onClick={handleAddOption} className={styles.addWheelButton}>
-                  Legg til
-                </button>
+                  </div>
+                )}
               </div>
             )}
-          </details>
+          </div>
         </>
       ) : (
         <div className={styles.stats}>
-          <h2>Kveldens tapere</h2>
-          <ol>
+          <h2 className={styles.statsTitle}>🍹 Kveldens tapere</h2>
+          <div className={styles.statsGrid}>
             {Object.entries(stats.losses)
               .sort(([, a], [, b]) => b - a)
               .map(([player, count], i) => (
-                <li key={i}>
-                  {emojis[player]} {player}: {count} tap
-                </li>
+                <div key={i} className={styles.statCard}>
+                  <span className={styles.statEmoji}>{emojis[player]}</span>
+                  <span className={styles.statName}>{player}</span>
+                  <span className={styles.statCount}>{count} tap</span>
+                </div>
               ))}
-          </ol>
-          <h2>Top 3 med dårligst odds</h2>
-          <ol>
+          </div>
+          <h2 className={styles.statsTitle}>🎲 Dårligst odds</h2>
+          <div className={styles.statsGrid}>
             {stats.topOdds.slice(0, 3).map((e, i) => (
-              <li key={i}>
-                {emojis[e.player]} {e.player}: {(e.odds * 100).toFixed()}%
-              </li>
+              <div key={i} className={styles.statCard}>
+                <span className={styles.statEmoji}>{emojis[e.player]}</span>
+                <span className={styles.statName}>{e.player}</span>
+                <span className={styles.statCount}>{(e.odds * 100).toFixed()}%</span>
+              </div>
             ))}
-          </ol>
+          </div>
         </div>
       )}
     </div>

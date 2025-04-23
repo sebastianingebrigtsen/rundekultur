@@ -7,71 +7,58 @@
   text-align: center;
   position: relative;
 }
-
-/* Header med tilbakeknapp og tab-knapper på én linje */
 .headerRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1rem;
 }
-
-.backButton {
-  background-color: #ddd;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-.tabSwitcherRow {
+.backAndTabs {
   display: flex;
   gap: 0.5rem;
   align-items: center;
 }
-
+.backButton,
 .tabButton,
 .dropdownBtn {
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 6px;
-  background-color: #f0f0f0;
+  background: #f0f0f0;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background 0.2s;
 }
-
+.backButton:hover,
 .tabButton:hover,
 .dropdownBtn:hover {
-  background-color: #e0e0e0;
+  background: #e0e0e0;
 }
-
-/* Dropdown styling for share-menu */
+.activeTab {
+  background: #ffde59;
+}
 .dropdown {
   position: relative;
 }
-
 .dropdownContent {
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: white;
+  background: #fff;
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 0.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   z-index: 10;
 }
-
 .dropdownItem {
   display: block;
-  background: none;
-  border: none;
-  padding: 0.25rem 0;
   width: 100%;
   text-align: left;
+  padding: 0.25rem 0;
+  background: none;
+  border: none;
   cursor: pointer;
 }
-
 .warning {
   background: #fee;
   color: #a00;
@@ -80,75 +67,63 @@
   border: 1px solid #a00;
   border-radius: 6px;
 }
-
-/* Logo plassert over PIN */
 .logoMain {
   display: block;
   margin: 0 auto 1rem;
   height: 150px;
   object-fit: contain;
 }
-
 .sectionTitle {
   font-size: 1.4rem;
   margin-bottom: 0.5rem;
 }
-
 .subtleInfo {
   font-size: 0.85rem;
   color: #666;
   margin-bottom: 1rem;
 }
-
 .startButton {
-  background-color: #28a745;
-  color: white;
+  background: #28a745;
+  color: #fff;
+  padding: 10px 20px;
   border: none;
   border-radius: 6px;
-  padding: 10px 20px;
-  font-size: 1rem;
   cursor: pointer;
   margin-bottom: 1rem;
 }
-
 .playerSection {
   margin-bottom: 2rem;
 }
-
-/* Hjulvalg styling */
-.detailsBox {
-  background-color: #fafafa;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1rem;
-  max-width: 500px;
-  margin: 0 auto;
-  text-align: left;
+.wheelToggleContainer {
+  margin-bottom: 2rem;
 }
-
-.detailsSummary {
-  font-weight: bold;
+.wheelToggleBtn {
+  background: #ffde59;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
   cursor: pointer;
   margin-bottom: 0.5rem;
 }
-
-.wheelList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+.wheelDropdown {
+  max-height: 200px;
+  overflow-y: auto;
+  background: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
 }
-
 .wheelItemRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 6px 8px;
-  background: white;
+  background: #fff;
   border: 1px solid #ccc;
   border-radius: 4px;
+  margin-bottom: 0.5rem;
 }
-
 .removeWheelBtn {
   background: transparent;
   border: none;
@@ -156,29 +131,25 @@
   color: #a00;
   cursor: pointer;
 }
-
 .addWheelContainer {
   display: flex;
   gap: 8px;
+  margin-top: 0.5rem;
 }
-
 .addWheelInput {
   flex: 1;
   padding: 6px;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
-
 .addWheelButton {
   padding: 6px 12px;
-  background-color: #007bff;
-  color: white;
+  background: #007bff;
+  color: #fff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
-
-/* Spillere (gjenbruk fra original Lobby.module.css) */
 .playerGrid {
   display: flex;
   flex-wrap: wrap;
@@ -186,9 +157,8 @@
   gap: 12px;
   margin-bottom: 1.5rem;
 }
-
 .playerCard {
-  background-color: #fff;
+  background: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 0.5rem;
@@ -197,11 +167,9 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   position: relative;
 }
-
 .playerCardEmoji {
   font-size: 1.6rem;
 }
-
 .playerCardName {
   font-size: 0.75rem;
   margin-top: 0.25rem;
@@ -211,51 +179,69 @@
   padding: 2px 4px;
   border-radius: 4px;
 }
-
 .connected {
-  background-color: #d4f5d4;
+  background: #d4f5d4;
   color: #256029;
 }
-
 .disconnected {
-  background-color: #f8d7da;
+  background: #f8d7da;
   color: #842029;
 }
-
 .removeOptionButton {
   margin-top: 4px;
   font-size: 0.7rem;
-  background-color: #ffc0c0;
+  background: #ffc0c0;
   border: none;
   border-radius: 4px;
   padding: 4px 6px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background 0.2s;
 }
-
 .removeOptionButton:hover {
-  background-color: #ff9999;
+  background: #ff9999;
+}
+.stats {
+  text-align: center;
+  padding: 1rem;
+}
+.statsTitle {
+  font-size: 1.2rem;
+  margin: 1rem 0;
+}
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+}
+.statCard {
+  background: linear-gradient(135deg, #ffe27a, #ffd54f);
+  padding: 0.75rem;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+.statCard:hover {
+  transform: scale(1.05);
+}
+.statEmoji {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.statName {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+.statCount {
+  font-size: 0.9rem;
+  color: #333;
 }
 
 @media (max-width: 500px) {
-  .tabButton,
-  .dropdownBtn,
-  .startButton {
-    font-size: 0.9rem;
-    padding: 8px 16px;
-  }
-
-  .addWheelInput {
-    width: 100%;
-    margin-bottom: 0.5rem;
-  }
-
-  .headerRow {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .tabSwitcherRow {
-    margin-top: 0.5rem;
+  .backAndTabs {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }
