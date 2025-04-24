@@ -13,7 +13,7 @@ const firebaseConfig = {
   storageBucket: 'rundekultur-1a014.appspot.com',
   messagingSenderId: '1015757144403',
   appId: '1:1015757144403:web:628aef4cdfc6602d9ca1a6',
-  // measurementId kan stå igjen om du trenger Analytics, men er valgfritt
+  measurementId: 'G-8GVSZQC701',
 };
 
 // 3. Initialiser app og database

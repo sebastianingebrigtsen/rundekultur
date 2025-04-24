@@ -10,6 +10,7 @@ function HomePage() {
   const [tempName, setTempName] = useState('');
   const [pinInput, setPinInput] = useState('');
   const [showJoinField, setShowJoinField] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [lastLobby, setLastLobby] = useState(() => {
     const saved = localStorage.getItem('lastLobby');
     return saved ? JSON.parse(saved) : null;
@@ -141,6 +142,20 @@ function HomePage() {
       </div>
       <div className={styles.emoji} style={{ top: '5%', right: '40%', transform: 'rotate(-8deg)' }}>
         🍹
+      </div>
+      <div className={styles.infoIcon} onClick={() => setShowInfo(!showInfo)}>
+        ℹ️
+        {showInfo && (
+          <div className={styles.infoBox}>
+            <p>
+              <strong>🤔 Hva er Rundekultur?</strong>
+            </p>
+            <p>
+              Alle triller terning fra 1–1 000 000. Neste spiller triller fra tallet du fikk. Den som får 1 må kjøpe en runde – og spinner et hjul for
+              å finne ut hva! 🍻
+            </p>
+          </div>
+        )}
       </div>
 
       <div className={styles.container}>

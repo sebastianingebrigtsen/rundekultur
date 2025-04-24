@@ -36,6 +36,28 @@
   font-size: 2rem;
   margin-bottom: 2rem;
 }
+.infoIcon {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  cursor: pointer;
+  font-size: 1.5rem;
+  z-index: 10;
+}
+
+.infoBox {
+  position: absolute;
+  top: 3rem;
+  right: 1rem;
+  width: 260px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
+  text-align: left;
+  z-index: 10;
+}
 
 /* src/components/HomePage.module.css */
 
