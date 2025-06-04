@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, set, get, onDisconnect } from 'firebase/database';
 import { database } from '../firebase';
+import { createLobby } from "../services/lobbyService";
 import styles from './HomePage.module.css';
 
 function HomePage() {
@@ -49,14 +50,7 @@ function HomePage() {
   const handleStart = () => {
     if (!name) return;
     const pin = generatePin();
-    const fullLobby = {
-      host: name,
-      lobbyName: `Lobby ${pin}`,
-      players: { [name]: { connected: true } },
-      wheelOptions: ['drink', 'cider', 'øl', 'vin', 'shot'],
-      createdAt: Date.now(),
-    };
-    set(ref(database, `lobbies/${pin}`), fullLobby);
+    createLobby(pin, name, 'deathroll', ['drink', 'cider', 'øl', 'vin', 'shot']);
     onDisconnect(ref(database, `lobbies/${pin}/players/${name}/connected`)).set(false);
     localStorage.setItem('lastLobby', JSON.stringify({ pin, lobbyName: `Lobby ${pin}` }));
     setLastLobby({ pin, lobbyName: `Lobby ${pin}` });

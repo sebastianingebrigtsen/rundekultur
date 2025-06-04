@@ -1,15 +1,15 @@
-// src/components/GamePage.js
+// src/components/game/Deathroll/DeathrollGame.js
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import styles from './GamePage.module.css';
+import styles from './DeathrollGame.module.css';
 import Spinner from './Spinner';
-import { subscribeLobby, subscribeGame, rollDice, spinWheel, resetGame } from '../services/lobbyService';
-import { emojiList } from '../utils/emojiList';
-import PlayerList from './PlayerList';
-import EmojiBackground from './EmojiBackground'; // ← Legg til denne importen
+import { subscribeLobby, subscribeGame, rollDice, spinWheel, resetGame } from '../../../services/lobbyService';
+import { emojiList } from '../../../utils/emojiList';
+import PlayerList from '../../PlayerList';
+import EmojiBackground from '../../common/EmojiBackground'; // ← Legg til denne importen
 
-export default function GamePage() {
+export default function DeathrollGame() {
   const { pin } = useParams();
   const navigate = useNavigate();
   const location = useLocation();

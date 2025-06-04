@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, get, set, onDisconnect } from 'firebase/database';
 import { database } from '../firebase';
-import EmojiBackground from './EmojiBackground';
+import EmojiBackground from './common/EmojiBackground';
 import styles from './JoinPage.module.css';
 
 export default function JoinPage() {

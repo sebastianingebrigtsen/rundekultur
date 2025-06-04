@@ -65,12 +65,13 @@ export function subscribeRoundsPlayed(pin, callback) {
  * @param {string} hostName
  * @param {string[]} wheelOptions
  */
-export function createLobby(pin, hostName, wheelOptions = []) {
+export function createLobby(pin, hostName, gameMode = 'deathroll', wheelOptions = []) {
   const fullLobby = {
     host: hostName,
     lobbyName: `Lobby ${pin}`,
     players: { [hostName]: { connected: true } },
     wheelOptions,
+    gameMode,
   };
   return set(ref(database, `lobbies/${pin}`), fullLobby);
 }

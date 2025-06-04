@@ -1,7 +1,7 @@
 // src/components/PlayerList.jsx
 import React from 'react';
 import stylesLobby from './Lobby.module.css';
-import stylesGame from './GamePage.module.css';
+import stylesGame from './game/Deathroll/DeathrollGame.module.css';
 
 /**
  * Reusable player list component for both Lobby (grid) and GamePage (bar).
